@@ -1,0 +1,11 @@
+PRJ dtc
+S lib
+S src
+B _build/lib
+B _build/src
+PKG cstruct
+PKG ppx_deriving.std
+PKG core
+PKG async
+PKG scid
+PKG leveldb

@@ -1,0 +1,15 @@
+true: debug, bin_annot
+
+<lib>: include
+<src>: include
+
+<lib/cstructs.*>: syntax(camlp4o), \
+                  package(cstruct.syntax)
+
+<lib/*.*>: package(core), \
+	   package(async), \
+	   package(cstruct), \
+           package(ppx_deriving.std), \
+           package(scid), \
+           package(leveldb), \
+           thread
