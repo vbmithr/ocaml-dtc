@@ -706,6 +706,12 @@ module SecurityDefinition = struct
   end
 
   module Reject = struct
+    include SecurityDefinition.Reject
+    let write cs ~request_id ~reason =
+      set_cs_size cs sizeof_cs;
+      set_cs__type cs (msg_to_enum SecurityDefinitionReject);
+      set_cs_request_id cs @@ Int32.of_int_exn request_id;
+      set_cs_reason (bytes_with_msg reason Lengths.text_description) 0 cs
   end
 
   module Response = struct

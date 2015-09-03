@@ -276,6 +276,15 @@ module SecurityDefinition = struct
     } as little_endian
   end
 
+  module Reject = struct
+    cstruct cs {
+      uint16_t size;
+      uint16_t _type;
+      int32_t request_id;
+      uint8_t reason[96];
+    } as little_endian
+  end
+
   module Response = struct
     cstruct cs {
       uint16_t size;
