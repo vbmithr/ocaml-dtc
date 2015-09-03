@@ -662,9 +662,9 @@ module MarketDepth = struct
     include MarketDepth.Update
     type t = {
       symbol_id: int;
-      side: side;
-      p: int64;
-      v: int64;
+      side: side [@default `Unset];
+      p: float [@default 0.];
+      v: float [@default 0.];
       op: market_depth_incremental_update;
     } [@@deriving show,create]
 
@@ -673,11 +673,11 @@ module MarketDepth = struct
       set_cs__type cs (msg_to_enum MarketDepthUpdateLevel);
       set_cs_symbol_id cs t.symbol_id;
       set_cs_direction cs (side_to_enum t.side);
-      set_cs_p cs (Int64.to_float t.p /. 1e8 |> Int64.bits_of_float);
-      set_cs_v cs (Int64.to_float t.v /. 1e8 |> Int64.bits_of_float);
+      set_cs_p cs (Int64.bits_of_float t.p);
+      set_cs_v cs (Int64.bits_of_float t.v);
       set_cs_op cs (t.op |> market_depth_incremental_update_to_enum)
 
-    let write ~symbol_id ~side ~p ~v ~op cs =
+    let write ~symbol_id ?(side=`Unset) ?(p=0.) ?(v=0.) ~op cs =
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum MarketDepthUpdateLevel);
       set_cs_symbol_id cs symbol_id;
