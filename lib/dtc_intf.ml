@@ -338,7 +338,7 @@ module Logon = struct
       protocol_version: int [@default current_version];
       result: logon_status;
       result_text: string;
-      reconnect_address: string;
+      reconnect_address: string [@default "0.0.0.0/0"];
       integer_1: int [@default 0];
       server_name: string;
       market_depth_updates_best_bid_and_ask: bool;
