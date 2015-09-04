@@ -8,6 +8,7 @@ let () =
     Pkg.lib ~exts:Exts.module_library "lib/dtc";
     Pkg.lib ~exts:Exts.module_library "lib/tick";
     Pkg.lib ~exts:Exts.module_library "lib/granulator";
+    Pkg.bin ~auto:true "src/ldb_browser";
     (* Pkg.doc "README.md"; *)
     (* Pkg.doc "CHANGES.md"; *)
   ]

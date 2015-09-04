@@ -13,3 +13,8 @@ true: debug, bin_annot
            package(scid), \
            package(leveldb), \
            thread
+
+<src/*.*>: package(core), \
+	   package(leveldb), \
+	   package(scid), \
+	   thread

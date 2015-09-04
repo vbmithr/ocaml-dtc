@@ -11,16 +11,16 @@ type t =
 
 let compare t t' = compare t#p t'#p
 let show t =
-  let ts = Int64.(t#ts /% 1_000_000_000L) in
-  let ns = Int64.(t#ts % 1_000_000_000L) in
-  Format.sprintf "< ts = %Ld.%Ld, p = %Ld, v = %Ld, d = %s >"
-    ts ns t#p t#v (show_buy_or_sell (t#side :> [`Unset | `Buy | `Sell]))
+  Format.sprintf "< ts = %s, p = %f, v = %Ld, d = %s >"
+    Time_ns.(of_int63_ns_since_epoch Int63.(of_int64_exn t#ts) |> to_string_fix_proto `Utc)
+    Int64.(to_float t#p /. 1e8)
+    t#v (show_buy_or_sell (t#side :> [`Unset | `Buy | `Sell]))
 
 let pp fmt t =
-  let ts = Int64.(t#ts /% 1_000_000_000L) in
-  let ns = Int64.(t#ts % 1_000_000_000L) in
-  Format.fprintf fmt "< ts = %Ld.%Ld, p = %Ld, v = %Ld, d = %s >"
-    ts ns t#p t#v (show_buy_or_sell (t#side :> [`Unset | `Buy | `Sell]))
+  Format.fprintf fmt "< ts = %s, p = %f, v = %Ld, d = %s >"
+    Time_ns.(of_int63_ns_since_epoch Int63.(of_int64_exn t#ts) |> to_string_fix_proto `Utc)
+    Int64.(to_float t#p /. 1e8)
+    t#v (show_buy_or_sell (t#side :> [`Unset | `Buy | `Sell]))
 
 let int64_of_v_side v side =
   let side_int64 = match side with `Buy -> 1L | `Sell -> 2L in
