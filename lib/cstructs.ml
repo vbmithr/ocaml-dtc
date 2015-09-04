@@ -201,7 +201,7 @@ module MarketDepth = struct
       uint16_t size;
       uint16_t _type;
       uint16_t symbol_id;
-      uint16_t direction;
+      uint16_t side;
       uint64_t p;
       uint64_t v;
       uint16_t level;
@@ -215,7 +215,7 @@ module MarketDepth = struct
       uint16_t size;
       uint16_t _type;
       uint16_t symbol_id;
-      uint16_t direction;
+      uint16_t side;
       uint64_t p;
       uint64_t v;
       uint8_t op;

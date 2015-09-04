@@ -627,9 +627,9 @@ module MarketDepth = struct
     include MarketDepth.Snapshot
     type t = {
       symbol_id: int;
-      d: side;
-      p: int64;
-      v: int64;
+      side: side;
+      p: float;
+      v: float;
       level: int;
       first: bool;
       last: bool;
@@ -639,9 +639,9 @@ module MarketDepth = struct
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum MarketDepthSnapshotLevel);
       set_cs_symbol_id cs t.symbol_id;
-      set_cs_direction cs (t.d |> side_to_enum);
-      set_cs_p cs (Int64.to_float t.p /. 1e8 |> Int64.bits_of_float);
-      set_cs_v cs (Int64.to_float t.v /. 1e8 |> Int64.bits_of_float);
+      set_cs_side cs (t.side |> side_to_enum);
+      set_cs_p cs (Int64.bits_of_float t.p);
+      set_cs_v cs (Int64.bits_of_float t.v);
       set_cs_level cs t.level;
       set_cs_first cs (int_of_bool t.first);
       set_cs_last cs (int_of_bool t.last)
@@ -650,7 +650,7 @@ module MarketDepth = struct
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum MarketDepthSnapshotLevel);
       set_cs_symbol_id cs symbol_id;
-      set_cs_direction cs (side |> side_to_enum);
+      set_cs_side cs (side |> side_to_enum);
       set_cs_p cs (Int64.bits_of_float p);
       set_cs_v cs (Int64.bits_of_float v);
       set_cs_level cs lvl;
@@ -672,7 +672,7 @@ module MarketDepth = struct
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum MarketDepthUpdateLevel);
       set_cs_symbol_id cs t.symbol_id;
-      set_cs_direction cs (side_to_enum t.side);
+      set_cs_side cs (side_to_enum t.side);
       set_cs_p cs (Int64.bits_of_float t.p);
       set_cs_v cs (Int64.bits_of_float t.v);
       set_cs_op cs (t.op |> market_depth_incremental_update_to_enum)
@@ -681,7 +681,7 @@ module MarketDepth = struct
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum MarketDepthUpdateLevel);
       set_cs_symbol_id cs symbol_id;
-      set_cs_direction cs (side_to_enum side);
+      set_cs_side cs (side_to_enum side);
       set_cs_p cs Int64.(bits_of_float p);
       set_cs_v cs Int64.(bits_of_float v);
       set_cs_op cs (op |> market_depth_incremental_update_to_enum)
