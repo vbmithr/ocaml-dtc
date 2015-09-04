@@ -172,7 +172,7 @@ type order_status =
   | `Filled
   | `Cancelled
   | `Rejected
-  ]
+  ] [@@deriving show,enum]
 
 type execution =
   [ `Unset
@@ -185,7 +185,7 @@ type execution =
   | `New_order_reject
   | `Order_cancel_reject
   | `Order_cancel_replace_reject
-  ]
+  ] [@@deriving show,enum]
 
 type side =
   [ `Unset
@@ -206,7 +206,7 @@ type order =
   | `Stop
   | `Stop_limit
   | `Market_if_touched
-  ]
+  ] [@@deriving show,enum]
 
 type time_in_force =
   [ `Unset
@@ -216,7 +216,7 @@ type time_in_force =
   | `Immediate_or_cancel
   | `All_or_none
   | `Fill_or_kill
-  ]
+  ] [@@deriving show,enum]
 
 type buy_or_sell =
   [ `Unset
@@ -897,6 +897,26 @@ module HistoricalPriceData = struct
 end
 
 module Trading = struct
+  module SubmitNewSingleOrder = struct
+    include Trading.SubmitNewSingleOrder
+    type t = {
+      symbol: string;
+      exchange: string;
+      cl_ord_id: string;
+      ord_type: order;
+      buy_sell: buy_or_sell;
+      p1: float;
+      p2: float;
+      qty: float;
+      tif: time_in_force;
+      expirets: int64;
+      trade_account: string;
+      automated: bool;
+      parent: bool;
+      text: string;
+    } [@@deriving show,create]
+  end
+
   module OpenOrdersRequest = struct
     include Trading.OpenOrdersRequest
     type t = {

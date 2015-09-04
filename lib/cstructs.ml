@@ -452,12 +452,14 @@ module Trading = struct
       uint8_t exchange[16];
       uint8_t trade_account[32];
       uint8_t order_id[32];
-      int32_t order_type;
+      int32_t order_type; (* aligned *)
       int32_t buy_sell;
+      uint32_t __padding;
       uint64_t price1;
       uint64_t price2;
       uint64_t qty;
       int32_t tif;
+      uint32_t ___padding;
       int64_t good_till_ts;
       uint8_t automated;
       uint8_t parent;
