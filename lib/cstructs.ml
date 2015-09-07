@@ -531,9 +531,9 @@ module Trading = struct
     cstruct cs {
       uint16_t size;
       uint16_t _type;
-      int32_t request_id;
+      int32_t request_id; (* aligned *)
       int32_t nb_msgs;
-      int32_t msg_number;
+      int32_t msg_number; (* aligned *)
       uint8_t symbol[64];
       uint8_t exchange[16];
       uint8_t previous_server_order_id[32];
@@ -541,12 +541,13 @@ module Trading = struct
       uint8_t client_order_id[32];
       uint8_t exchange_order_id[32];
       int32_t order_status;
-      int32_t order_update_reason;
+      int32_t order_update_reason; (* aligned *)
       int32_t order_type;
-      int32_t buy_sell;
+      int32_t buy_sell; (* aligned *)
       uint64_t price1;
       uint64_t price2;
       int32_t tif;
+      uint32_t __padding; (* aligned *)
       int64_t good_till_ts;
       uint64_t order_qty;
       uint64_t filled_qty;

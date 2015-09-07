@@ -174,17 +174,17 @@ type order_status =
   | `Rejected
   ] [@@deriving show,enum]
 
-type execution =
+type update_reason =
   [ `Unset
-  | `Open_orders_request
+  | `Open_orders_request_response
   | `New_order_accepted
   | `Filled
-  | `Partial_fill
+  | `Filled_partially
   | `Cancelled
   | `Cancel_replace_complete
-  | `New_order_reject
-  | `Order_cancel_reject
-  | `Order_cancel_replace_reject
+  | `New_order_rejected
+  | `Cancel_rejected
+  | `Cancel_replace_rejected
   ] [@@deriving show,enum]
 
 type side =
@@ -199,7 +199,7 @@ type market_depth_incremental_update =
   | `Delete
   ] [@@deriving show,enum]
 
-type order =
+type order_type =
   [ `Unset
   | `Market
   | `Limit
@@ -900,21 +900,102 @@ module Trading = struct
   module SubmitNewSingleOrder = struct
     include Trading.SubmitNewSingleOrder
     type t = {
+      trade_account: string;
       symbol: string;
       exchange: string;
-      cl_ord_id: string;
-      ord_type: order;
+      cli_ord_id: string;
+      ord_type: order_type;
       buy_sell: buy_or_sell;
       p1: float;
       p2: float;
       qty: float;
       tif: time_in_force;
-      expirets: int64;
-      trade_account: string;
+      good_till_ts: int64; (* UNIX time in seconds. *)
       automated: bool;
       parent: bool;
       text: string;
     } [@@deriving show,create]
+
+    let read cs =
+      create
+        ~trade_account:(get_cs_trade_account cs |> cstring_of_cstruct)
+        ~symbol:(get_cs_symbol cs |> cstring_of_cstruct)
+        ~exchange:(get_cs_exchange cs |> cstring_of_cstruct)
+        ~cli_ord_id:(get_cs_order_id cs |> cstring_of_cstruct)
+        ~ord_type:Option.(value_exn (get_cs_order_type cs |> Int32.to_int_exn |>
+                                     order_type_of_enum))
+        ~buy_sell:Option.(value_exn (get_cs_buy_sell cs |> Int32.to_int_exn |>
+                                     buy_or_sell_of_enum))
+        ~p1:Int64.(float_of_bits @@ get_cs_price1 cs)
+        ~p2:Int64.(float_of_bits @@ get_cs_price2 cs)
+        ~qty:Int64.(float_of_bits @@ get_cs_qty cs)
+        ~tif:Option.(value_exn (get_cs_tif cs |> Int32.to_int_exn |>
+                                time_in_force_of_enum))
+        ~good_till_ts:(get_cs_good_till_ts cs)
+        ~automated:(get_cs_automated cs |> bool_of_int)
+        ~parent:(get_cs_parent cs |> bool_of_int)
+        ~text:(get_cs_text cs |> cstring_of_cstruct)
+        ()
+  end
+
+  module OrderUpdate = struct
+    include Trading.OrderUpdate
+
+    let write
+        ~request_id
+        ?(nb_msgs=1l)
+        ?(msg_number=1l)
+        ~symbol ~exchange
+        ?(prev_srv_ord_id="")
+        ~cli_ord_id
+        ?(srv_ord_id="")
+        ?(xch_ord_id="")
+        ~status
+        ~reason
+        ~ord_type ~buy_sell ~p1 ~p2 ~qty ~tif ~good_till_ts
+        ?(filled_qty=0.) ?(remaining_qty=0.)
+        ?(avg_fill_p=0.) ?(last_fill_p=0.) ?(last_fill_qty=0.) ?(last_fill_ts=0L)
+        ?(fill_exec_id="")
+        ?(trade_account="")
+        ?(text="")
+        ?(no_orders=false)
+        ?(parent_srv_ord_id="")
+        ?(oco_linked_ord_srv_ord_id="")
+        cs =
+      set_cs_size cs sizeof_cs;
+      set_cs__type cs (msg_to_enum OrderUpdate);
+      set_cs_nb_msgs cs nb_msgs;
+      set_cs_msg_number cs msg_number;
+      set_cs_request_id cs request_id;
+      set_cs_symbol (bytes_with_msg symbol 64) 0 cs;
+      set_cs_exchange (bytes_with_msg exchange 16) 0 cs;
+      set_cs_previous_server_order_id (bytes_with_msg prev_srv_ord_id 32) 0 cs;
+      set_cs_server_order_id (bytes_with_msg srv_ord_id 32) 0 cs;
+      set_cs_client_order_id (bytes_with_msg cli_ord_id 32) 0 cs;
+      set_cs_exchange_order_id (bytes_with_msg xch_ord_id 32) 0 cs;
+      set_cs_order_status cs (order_status_to_enum status |> Int32.of_int_exn);
+      set_cs_order_update_reason cs
+        (update_reason_to_enum reason |> Int32.of_int_exn);
+      set_cs_order_type cs (order_type_to_enum ord_type |> Int32.of_int_exn);
+      set_cs_buy_sell cs (buy_or_sell_to_enum buy_sell |> Int32.of_int_exn);
+      set_cs_price1 cs @@ Int64.bits_of_float p1;
+      set_cs_price2 cs @@ Int64.bits_of_float p2;
+      set_cs_tif cs @@ Int32.of_int_exn @@ time_in_force_to_enum tif;
+      set_cs_good_till_ts cs good_till_ts;
+      set_cs_order_qty cs @@ Int64.bits_of_float qty;
+      set_cs_filled_qty cs @@ Int64.bits_of_float filled_qty;
+      set_cs_remaining_qty cs @@ Int64.bits_of_float remaining_qty;
+      set_cs_avgfillprice cs @@ Int64.bits_of_float avg_fill_p;
+      set_cs_lastfillprice cs @@ Int64.bits_of_float last_fill_p;
+      set_cs_lastfillqty cs @@ Int64.bits_of_float last_fill_qty;
+      set_cs_lastfilldatetime cs last_fill_ts;
+      set_cs_no_orders cs @@ int_of_bool no_orders;
+      set_cs_fillexecution_id (bytes_with_msg fill_exec_id 64) 0 cs;
+      set_cs_trade_account (bytes_with_msg trade_account 32) 0 cs;
+      set_cs_text (bytes_with_msg text 96) 0 cs;
+      set_cs_parent_server_order_id (bytes_with_msg parent_srv_ord_id 32) 0 cs;
+      set_cs_oco_linked_order_server_order_id
+        (bytes_with_msg oco_linked_ord_srv_ord_id 32) 0 cs
   end
 
   module OpenOrdersRequest = struct
