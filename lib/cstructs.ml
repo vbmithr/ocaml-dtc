@@ -464,6 +464,8 @@ module Trading = struct
       uint8_t automated;
       uint8_t parent;
       uint8_t text[48];
+      uint16_t ____padding;
+      int32_t open_or_close;
     } as little_endian
   end
 
@@ -474,8 +476,9 @@ module Trading = struct
       uint8_t symbol[64];
       uint8_t exchange[16];
       uint8_t order_id_1[32];
-      int32_t order_type_1;
+      int32_t order_type_1; (* aligned *)
       int32_t buy_sell_1;
+      uint32_t __padding;
       uint64_t price1_1;
       uint64_t price2_1;
       uint64_t qty_1;
@@ -486,11 +489,14 @@ module Trading = struct
       uint64_t price2_2;
       uint64_t qty_2;
       int32_t tif;
+      uint32_t ___padding;
       int64_t good_till_ts;
       uint8_t trade_account[32];
       uint8_t automated;
       uint8_t parent[32];
       uint8_t text[48];
+      uint8_t ____padding[3];
+      int32_t open_or_close;
     } as little_endian
   end
 

@@ -906,6 +906,7 @@ module Trading = struct
       cli_ord_id: string;
       ord_type: order_type;
       buy_sell: buy_or_sell;
+      open_close: open_close_trade;
       p1: float;
       p2: float;
       qty: float;
@@ -926,6 +927,8 @@ module Trading = struct
                                      order_type_of_enum))
         ~buy_sell:Option.(value_exn (get_cs_buy_sell cs |> Int32.to_int_exn |>
                                      buy_or_sell_of_enum))
+        ~open_close:Option.(value_exn (get_cs_open_or_close cs |> Int32.to_int_exn |>
+                                       open_close_trade_of_enum))
         ~p1:Int64.(float_of_bits @@ get_cs_price1 cs)
         ~p2:Int64.(float_of_bits @@ get_cs_price2 cs)
         ~qty:Int64.(float_of_bits @@ get_cs_qty cs)
