@@ -150,7 +150,9 @@ type message_supported =
   ]
 
 type trade_mode =
-  [ `Demo [@value 1]
+  [
+  | `Unset
+  | `Demo
   | `Simulated
   | `Live
   ] [@@deriving show,enum]
@@ -303,13 +305,13 @@ module Logon = struct
   module Request = struct
     include Logon.Request
     type t = {
-      protocol_version: int;
+      protocol_version: int32;
       username: string;
       password: string;
       general_text_data: string;
-      integer_1: int;
-      integer_2: int;
-      heartbeat_interval: int;
+      integer_1: int32;
+      integer_2: int32;
+      heartbeat_interval: int32;
       trade_mode: trade_mode;
       trade_account: string;
       hardware_id: string;
@@ -318,13 +320,13 @@ module Logon = struct
 
     let read cs =
       create
-        ~protocol_version:(get_cs_protocol_version cs |> Int32.to_int_exn)
+        ~protocol_version:(get_cs_protocol_version cs)
         ~username:(get_cs_username cs |> cstring_of_cstruct)
         ~password:(get_cs_password cs |> cstring_of_cstruct)
         ~general_text_data:(get_cs_general_text_data cs |> cstring_of_cstruct)
-        ~integer_1:(get_cs_integer_1 cs |> Int32.to_int_exn)
-        ~integer_2:(get_cs_integer_2 cs |> Int32.to_int_exn)
-        ~heartbeat_interval:(get_cs_heartbeat_interval cs |> Int32.to_int_exn)
+        ~integer_1:(get_cs_integer_1 cs)
+        ~integer_2:(get_cs_integer_2 cs)
+        ~heartbeat_interval:(get_cs_heartbeat_interval cs)
         ~trade_mode:(Option.value_exn
             (get_cs_trade_mode cs |> Int32.to_int_exn |> trade_mode_of_enum))
         ~trade_account:(get_cs_trade_account cs |> cstring_of_cstruct)
@@ -945,19 +947,30 @@ module Trading = struct
     include Trading.OrderUpdate
 
     let write
-        ~request_id
+        ?(request_id=0l)
         ?(nb_msgs=1l)
         ?(msg_number=1l)
-        ~symbol ~exchange
+        ?(symbol="")
+        ?(exchange="")
         ?(prev_srv_ord_id="")
-        ~cli_ord_id
+        ?(cli_ord_id="")
         ?(srv_ord_id="")
         ?(xch_ord_id="")
-        ~status
-        ~reason
-        ~ord_type ~buy_sell ~p1 ~p2 ~qty ~tif ~good_till_ts
-        ?(filled_qty=0.) ?(remaining_qty=0.)
-        ?(avg_fill_p=0.) ?(last_fill_p=0.) ?(last_fill_qty=0.) ?(last_fill_ts=0L)
+        ?(status=`Unspecified)
+        ?(reason=`Unset)
+        ?(ord_type=`Unset)
+        ?(buy_sell=`Unset)
+        ?(p1=0.)
+        ?(p2=0.)
+        ?(qty=0.)
+        ?(tif=`Unset)
+        ?(good_till_ts=0L)
+        ?(filled_qty=0.)
+        ?(remaining_qty=0.)
+        ?(avg_fill_p=0.)
+        ?(last_fill_p=0.)
+        ?(last_fill_qty=0.)
+        ?(last_fill_ts=0L)
         ?(fill_exec_id="")
         ?(trade_account="")
         ?(text="")
@@ -1004,29 +1017,29 @@ module Trading = struct
   module OpenOrdersRequest = struct
     include Trading.OpenOrdersRequest
     type t = {
-      id: int;
+      id: int32;
       orders: [`All | `One of string]
     } [@@deriving show,create]
 
     let read cs =
-      let id = get_cs_request_id cs |> Int32.to_int_exn in
-      if get_cs_request_all_orders cs |> Int32.to_int_exn |> bool_of_int then
-        create ~id ~orders:`All ()
-      else
+      let id = get_cs_request_id cs in
+      match get_cs_request_all_orders cs with
+      | 0l ->
         let server_order_id =
           get_cs_server_order_id cs |> cstring_of_cstruct in
         create ~id ~orders:(`One server_order_id) ()
+      | _ -> create ~id ~orders:`All ()
   end
 
   module CurrentPositionsRequest = struct
     include Trading.CurrentPositionsRequest
     type t = {
-      id: int;
+      id: int32;
       trade_account: string;
     } [@@deriving show,create]
 
     let read cs =
-      let id = get_cs_request_id cs |> Int32.to_int_exn in
+      let id = get_cs_request_id cs in
       let trade_account = get_cs_trade_account cs |> cstring_of_cstruct in
       create ~id ~trade_account ()
   end
@@ -1047,15 +1060,20 @@ module Trading = struct
         ?(trade_account="")
         ?(position_id="")
         ?(no_positions=false)
-        ~nb_msgs ~msg_number
-        ~request_id  ~symbol ~exchange
-        ~p ~v ~unsollicited
+        ~nb_msgs
+        ~msg_number
+        ?(request_id=0l)
+        ?(symbol="")
+        ?(exchange="")
+        ?(p=0.)
+        ?(v=0.)
+        ~unsollicited
         cs =
       set_cs_size cs sizeof_cs;
       set_cs__type cs @@ msg_to_enum PositionUpdate;
-      set_cs_request_id cs @@ Int32.of_int_exn request_id;
-      set_cs_nb_msgs cs @@ Int32.of_int_exn nb_msgs;
-      set_cs_msg_number cs @@ Int32.of_int_exn msg_number;
+      set_cs_request_id cs request_id;
+      set_cs_nb_msgs cs nb_msgs;
+      set_cs_msg_number cs msg_number;
       set_cs_symbol (bytes_with_msg symbol Lengths.symbol) 0 cs;
       set_cs_exchange (bytes_with_msg exchange Lengths.exchange) 0 cs;
       set_cs_qty cs @@ Int64.bits_of_float v;
@@ -1064,11 +1082,6 @@ module Trading = struct
       set_cs_trade_account (bytes_with_msg trade_account 32) 0 cs;
       set_cs_no_positions cs @@ int_of_bool no_positions;
       set_cs_unsollicited cs @@ int_of_bool unsollicited
-
-    let write_no_positions ~request_id cs =
-      write ~nb_msgs:1 ~msg_number:1 ~request_id
-        ~symbol:"" ~exchange:"" ~p:0. ~v:0. ~no_positions:true
-        ~unsollicited:false cs
   end
 
   module TradeAccountResponse = struct
