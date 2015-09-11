@@ -195,7 +195,7 @@ type side =
   | `Ask
   ] [@@deriving show,enum]
 
-type market_depth_incremental_update =
+type market_depth_update_type =
   [ `Unset
   | `Insert_update
   | `Delete
@@ -667,7 +667,7 @@ module MarketDepth = struct
       side: side [@default `Unset];
       p: float [@default 0.];
       v: float [@default 0.];
-      op: market_depth_incremental_update;
+      op: market_depth_update_type [@default `Unset];
     } [@@deriving show,create]
 
     let to_cstruct cs t =
@@ -677,7 +677,7 @@ module MarketDepth = struct
       set_cs_side cs (side_to_enum t.side);
       set_cs_p cs (Int64.bits_of_float t.p);
       set_cs_v cs (Int64.bits_of_float t.v);
-      set_cs_op cs (t.op |> market_depth_incremental_update_to_enum)
+      set_cs_op cs (t.op |> market_depth_update_type_to_enum)
 
     let write ~symbol_id ?(side=`Unset) ?(p=0.) ?(v=0.) ~op cs =
       set_cs_size cs sizeof_cs;
@@ -686,7 +686,7 @@ module MarketDepth = struct
       set_cs_side cs (side_to_enum side);
       set_cs_p cs Int64.(bits_of_float p);
       set_cs_v cs Int64.(bits_of_float v);
-      set_cs_op cs (op |> market_depth_incremental_update_to_enum)
+      set_cs_op cs (op |> market_depth_update_type_to_enum)
   end
 end
 
