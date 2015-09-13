@@ -343,7 +343,7 @@ module Logon = struct
       reconnect_address: string [@default "0.0.0.0/0"];
       integer_1: int [@default 0];
       server_name: string;
-      market_depth_updates_best_bid_and_ask: bool;
+      market_depth_updates_best_bid_and_ask: bool [@default false];
       trading_supported: bool [@default false];
       oco_supported: bool [@default false];
       ocr_supported: bool [@default false];
