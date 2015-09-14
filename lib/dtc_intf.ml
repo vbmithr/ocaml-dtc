@@ -1100,17 +1100,17 @@ module Trading = struct
       include Trading.HistoricalOrderFillsRequest
       type t = {
         id: int;
-        server_order_id: string;
+        srv_order_id: string;
         nb_of_days: int;
         trade_account: string;
       } [@@deriving show,create]
 
       let read cs =
         let id = get_cs_request_id cs |> Int32.to_int_exn in
-        let server_order_id = get_cs_server_order_id cs |> cstring_of_cstruct in
+        let srv_order_id = get_cs_server_order_id cs |> cstring_of_cstruct in
         let nb_of_days = get_cs_number_of_days cs |> Int32.to_int_exn in
         let trade_account = get_cs_trade_account cs |> cstring_of_cstruct in
-        create ~id ~server_order_id ~nb_of_days ~trade_account ()
+        create ~id ~srv_order_id ~nb_of_days ~trade_account ()
     end
 
     module Response = struct
@@ -1118,10 +1118,18 @@ module Trading = struct
       let write
           ?(trade_account="")
           ?(no_order_fills=false)
-          ~nb_msgs ~msg_number
-          ~request_id ~symbol ~exchange
-          ~server_order_id ~exec_id
-          ~buy_sell ~open_close ~p ~v ~ts
+          ~nb_msgs
+          ~msg_number
+          ~request_id
+          ?(symbol="")
+          ?(exchange="")
+          ?(srv_order_id="")
+          ?(exec_id="")
+          ?(buy_sell=`Unset)
+          ?(open_close=`Unset)
+          ?(p=0.)
+          ?(v=0.)
+          ?(ts=0L)
           cs =
         set_cs_size cs sizeof_cs;
         set_cs__type cs @@ msg_to_enum HistoricalOrderFillResponse;
@@ -1130,7 +1138,7 @@ module Trading = struct
         set_cs_msg_number cs @@ Int32.of_int_exn msg_number;
         set_cs_symbol (bytes_with_msg symbol Lengths.symbol) 0 cs;
         set_cs_exchange (bytes_with_msg exchange Lengths.exchange) 0 cs;
-        set_cs_server_order_id (bytes_with_msg server_order_id Lengths.order_id) 0 cs;
+        set_cs_server_order_id (bytes_with_msg srv_order_id Lengths.order_id) 0 cs;
         set_cs_buy_sell cs (buy_or_sell_to_enum buy_sell |> Int32.of_int_exn);
         set_cs_price cs @@ Int64.bits_of_float p;
         set_cs_qty cs @@ Int64.bits_of_float v;
@@ -1139,11 +1147,6 @@ module Trading = struct
         set_cs_trade_account (bytes_with_msg trade_account Lengths.trade_account) 0 cs;
         set_cs_open_close cs (open_close_trade_to_enum open_close |> Int32.of_int_exn);
         set_cs_no_order_fills cs (int_of_bool no_order_fills)
-
-      let write_no_filled_orders ~request_id cs =
-        write ~no_order_fills:true ~nb_msgs:1 ~msg_number:1 ~request_id
-          ~symbol:"" ~exchange:"" ~server_order_id:"" ~exec_id:""
-          ~buy_sell:`Unset ~open_close:`Unset ~p:0. ~v:0. ~ts:0L cs
     end
   end
 end
