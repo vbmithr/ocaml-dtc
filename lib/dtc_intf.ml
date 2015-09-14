@@ -180,6 +180,7 @@ type update_reason =
   [ `Unset
   | `Open_orders_request_response
   | `New_order_accepted
+  | `General_order_update
   | `Filled
   | `Filled_partially
   | `Cancelled
