@@ -61,25 +61,6 @@ module Logon = struct
   end
 end
 
-module TradeAccount = struct
-  module Request = struct
-    cstruct cs {
-      uint16_t size;
-      uint16_t _type;
-    } as little_endian
-  end
-
-  module Response = struct
-    cstruct cs {
-      uint16_t size;
-      uint16_t _type;
-      int32_t total_number_messages;
-      int32_t message_number;
-      int8_t trade_account[32]
-    } as little_endian
-  end
-end
-
 module MarketData = struct
   module Request = struct
     cstruct cs {
@@ -393,53 +374,59 @@ module HistoricalPriceData = struct
 end
 
 module Account = struct
-  module ListReq = struct
+  module List = struct
+    module Request = struct
     cstruct cs {
       uint16_t size;
       uint16_t _type;
+      int32_t request_id
     } as little_endian
+    end
+
+    module Response = struct
+      cstruct cs {
+        uint16_t size;
+        uint16_t _type;
+        int32_t nb_msgs;
+        int32_t msg_number;
+        int8_t trade_account[32];
+        int32_t request_id;
+      } as little_endian
+    end
   end
 
-  module ListResp = struct
-    cstruct cs {
-      uint16_t size;
-      uint16_t _type;
-      int32_t nb_msg;
-      int32_t msg_id; (* 1-indexed *)
-      uint8_t account_name[32];
-    } as little_endian
-  end
+  module Balance = struct
+    module Request = struct
+      cstruct cs {
+        uint16_t size;
+        uint16_t _type;
+        int32_t id;
+        uint8_t trade_account[32];
+      } as little_endian
+    end
 
-  module BalanceReq = struct
-    cstruct cs {
-      uint16_t size;
-      uint16_t _type;
-      int32_t id;
-      uint8_t account_name[32];
-    } as little_endian
-  end
+    module Reject = struct
+      cstruct cs {
+        uint16_t size;
+        uint16_t _type;
+        int32_t request_id;
+        uint8_t reason[96];
+      } as little_endian
+    end
 
-  module BalanceRej = struct
-    cstruct cs {
-      uint16_t size;
-      uint16_t _type;
-      int32_t id;
-      uint8_t reason[96];
-    } as little_endian
-  end
-
-  module BalanceUpdate = struct
-    cstruct cs {
-      uint16_t size;
-      uint16_t _type;
-      int32_t req_id;
-      uint64_t cash_balance;
-      uint64_t balance_for_new_positions;
-      uint8_t currency[8];
-      uint8_t account_name[32];
-      uint64_t securities_value;
-      uint64_t margin_requirements;
-    } as little_endian
+    module Update = struct
+      cstruct cs {
+        uint16_t size;
+        uint16_t _type;
+        int32_t request_id;
+        uint64_t cash_balance;
+        uint64_t balance_available;
+        uint8_t currency[8];
+        uint8_t trade_account[32];
+        uint64_t securities_value;
+        uint64_t margin_requirement;
+      } as little_endian
+    end
   end
 end
 
@@ -636,7 +623,7 @@ module Trading = struct
       uint8_t position_id[32];
       uint8_t trade_account[32];
       uint8_t no_positions;
-      uint8_t unsollicited;
+      uint8_t unsolicited;
     } as little_endian
   end
 
@@ -646,23 +633,6 @@ module Trading = struct
       uint16_t _type;
       int32_t request_id;
       uint8_t reason[96];
-    } as little_endian
-  end
-
-  module TradeAccountRequest = struct
-    cstruct cs {
-      uint16_t size;
-      uint16_t _type;
-    } as little_endian
-  end
-
-  module TradeAccountResponse = struct
-    cstruct cs {
-      uint16_t size;
-      uint16_t _type;
-      int32_t nb_msgs;
-      int32_t msg_number;
-      int8_t trade_account[32];
     } as little_endian
   end
 end

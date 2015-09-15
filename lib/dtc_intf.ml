@@ -122,6 +122,7 @@ type msg =
   (* Account balance *)
   | AccountBalanceUpdate [@value 600]
   | AccountBalanceRequest
+  | AccountBalanceReject
 
   (* Logging *)
   | UserMessage [@value 700]
@@ -172,7 +173,7 @@ type order_status =
   | `Pending_cancel_replace
   | `Pending_cancel
   | `Filled
-  | `Cancelled
+  | `Canceled
   | `Rejected
   ] [@@deriving show,enum]
 
@@ -183,7 +184,7 @@ type update_reason =
   | `General_order_update
   | `Filled
   | `Filled_partially
-  | `Cancelled
+  | `Canceled
   | `Cancel_replace_complete
   | `New_order_rejected
   | `Cancel_rejected
@@ -214,7 +215,7 @@ type order_type =
 type time_in_force =
   [ `Unset
   | `Day
-  | `Good_till_cancelled
+  | `Good_till_canceled
   | `Good_till_date_time
   | `Immediate_or_cancel
   | `All_or_none
@@ -944,6 +945,20 @@ module Trading = struct
         ()
   end
 
+  module CancelOrder = struct
+    include Trading.CancelOrder
+    type t = {
+      srv_ord_id: string;
+      cli_ord_id: string;
+    } [@@deriving show,create]
+
+    let read cs =
+      create
+        ~srv_ord_id:(get_cs_server_order_id cs |> cstring_of_cstruct)
+        ~cli_ord_id:(get_cs_client_order_id cs |> cstring_of_cstruct)
+        ()
+  end
+
   module OrderUpdate = struct
     include Trading.OrderUpdate
 
@@ -1068,7 +1083,7 @@ module Trading = struct
         ?(exchange="")
         ?(p=0.)
         ?(v=0.)
-        ~unsollicited
+        ~unsolicited
         cs =
       set_cs_size cs sizeof_cs;
       set_cs__type cs @@ msg_to_enum PositionUpdate;
@@ -1082,19 +1097,9 @@ module Trading = struct
       set_cs_position_id (bytes_with_msg position_id 32) 0 cs;
       set_cs_trade_account (bytes_with_msg trade_account 32) 0 cs;
       set_cs_no_positions cs @@ int_of_bool no_positions;
-      set_cs_unsollicited cs @@ int_of_bool unsollicited
+      set_cs_unsolicited cs @@ int_of_bool unsolicited
   end
 
-  module TradeAccountResponse = struct
-    include Trading.TradeAccountResponse
-
-    let write ~msg_number ~nb_msgs ~trade_account cs =
-      set_cs_size cs sizeof_cs;
-      set_cs__type cs @@ msg_to_enum TradeAccountResponse;
-      set_cs_nb_msgs cs (Int32.of_int_exn nb_msgs);
-      set_cs_msg_number cs (Int32.of_int_exn msg_number);
-      set_cs_trade_account (bytes_with_msg trade_account Lengths.trade_account) 0 cs
-  end
 
   module HistoricalOrderFills = struct
     module Request = struct
@@ -1148,6 +1153,65 @@ module Trading = struct
         set_cs_trade_account (bytes_with_msg trade_account Lengths.trade_account) 0 cs;
         set_cs_open_close cs (open_close_trade_to_enum open_close |> Int32.of_int_exn);
         set_cs_no_order_fills cs (int_of_bool no_order_fills)
+    end
+  end
+end
+
+module Account = struct
+  module List = struct
+    module Request = struct
+      include Account.List.Request
+
+      type t = {
+        id: int32;
+      } [@@deriving create]
+
+      let read cs = create ~id:(get_cs_request_id cs) ()
+    end
+
+    module Response = struct
+      include Account.List.Response
+
+      let write ~msg_number ~nb_msgs ~trade_account ~request_id cs =
+        set_cs_size cs sizeof_cs;
+        set_cs__type cs @@ msg_to_enum TradeAccountResponse;
+        set_cs_nb_msgs cs nb_msgs;
+        set_cs_msg_number cs msg_number;
+        set_cs_trade_account (bytes_with_msg trade_account Lengths.trade_account) 0 cs;
+        set_cs_request_id cs request_id;
+    end
+  end
+
+  module Balance = struct
+    module Request = struct
+      include Account.Balance.Request
+      type t = {
+        id: int32;
+        trade_account: string;
+      } [@@deriving create]
+
+      let read cs =
+        create
+          ~id:(get_cs_id cs)
+          ~trade_account:(get_cs_trade_account cs |> cstring_of_cstruct)
+          ()
+    end
+
+    module Update = struct
+      include Account.Balance.Update
+      let write ?(request_id=0l)
+          ~cash_balance ~balance_available ~currency
+          ~trade_account ~securities_value ~margin_requirement
+          cs =
+        set_cs_size cs sizeof_cs;
+        set_cs__type cs @@ msg_to_enum AccountBalanceUpdate;
+        set_cs_request_id cs request_id;
+        set_cs_cash_balance cs Int64.(bits_of_float cash_balance);
+        set_cs_balance_available cs Int64.(bits_of_float balance_available);
+        set_cs_currency (bytes_with_msg currency 8) 0 cs;
+        set_cs_trade_account (bytes_with_msg trade_account Lengths.trade_account) 0 cs;
+        set_cs_securities_value cs Int64.(bits_of_float securities_value);
+        set_cs_margin_requirement cs Int64.(bits_of_float margin_requirement);
     end
   end
 end
