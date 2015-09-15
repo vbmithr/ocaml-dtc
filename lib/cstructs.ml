@@ -1,3 +1,12 @@
+module Encoding = struct
+  cstruct cs {
+    uint16_t size;
+    uint16_t _type;
+    int32_t version;
+    int32_t encoding;
+  } as little_endian
+end
+
 module Logon = struct
   module Request = struct
     cstruct cs {

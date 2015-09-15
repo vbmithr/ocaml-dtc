@@ -263,6 +263,14 @@ type price_display_format =
   | `Denominator_2 [@value 102]
   ] [@@deriving show,enum]
 
+type encoding =
+  [ `Binary
+  | `Binary_vlen
+  | `Json
+  | `Json_compact
+  | `Protobuf
+  ] [@@deriving show, enum]
+
 let price_display_format_of_ticksize = function
   | 1. -> `Decimal_0
   | 1e-1 -> `Decimal_1
@@ -302,6 +310,30 @@ let bytes_with_msg msg len =
 let cstring_of_cstruct cs =
   Cstruct.(Bigstring.get_padded_fixed_string
              ~padding:'\x00' cs.buffer ~pos:cs.off ~len:cs.len ())
+
+module Encoding = struct
+  include Encoding
+  type t = {
+    version: int32;
+    encoding: encoding;
+  } [@@deriving create]
+
+  module Request = struct
+    let read cs =
+      let encoding =
+        Option.(value_exn (get_cs_encoding cs |>
+                           Int32.to_int_exn |>
+                           encoding_of_enum))
+      in
+      create ~version:(get_cs_version cs) ~encoding ()
+  end
+
+  module Response = struct
+    let write cs =
+      set_cs_version cs Int32.(of_int_exn current_version);
+      set_cs_encoding cs Int32.(of_int_exn @@ encoding_to_enum `Binary)
+  end
+end
 
 module Logon = struct
   module Request = struct
