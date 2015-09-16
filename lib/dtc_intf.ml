@@ -375,7 +375,7 @@ module Logon = struct
       result: logon_status;
       result_text: string;
       reconnect_address: string [@default "0.0.0.0/0"];
-      integer_1: int [@default 0];
+      integer_1: int32 [@default 0l];
       server_name: string;
       market_depth_updates_best_bid_and_ask: bool [@default false];
       trading_supported: bool [@default false];
@@ -398,7 +398,7 @@ module Logon = struct
       set_cs_result cs (Int32.of_int_exn @@ logon_status_to_enum t.result);
       set_cs_result_text (bytes_with_msg t.result_text Lengths.text_description) 0 cs;
       set_cs_reconnect_address (bytes_with_msg t.reconnect_address 64) 0 cs;
-      set_cs_integer_1 cs @@ Int32.of_int_exn t.integer_1;
+      set_cs_integer_1 cs t.integer_1;
       set_cs_server_name (bytes_with_msg t.server_name 60) 0 cs;
       set_cs_market_depth_updates_best_bid_and_ask cs
       @@ int_of_bool t.market_depth_updates_best_bid_and_ask;
@@ -499,13 +499,13 @@ module MarketData = struct
     include MarketData.Snapshot
     type t = {
       symbol_id: int;
-      dly_settlement_price: float [@default 0.] (* vwap *);
-      dly_o: float [@default 0.];
-      dly_h: float [@default 0.];
-      dly_l: float [@default 0.];
-      dly_v: float [@default 0.];
-      dly_n: int [@default 0];
-      open_interest: int [@default 0];
+      session_settlement_price: float [@default 0.] (* vwap *);
+      session_o: float [@default 0.];
+      session_h: float [@default 0.];
+      session_l: float [@default 0.];
+      session_v: float [@default 0.];
+      session_n: int32 [@default 0l];
+      open_interest: int32 [@default 0l];
       bid: float [@default 0.];
       ask: float [@default 0.];
       bid_qty: float [@default 0.];
@@ -522,13 +522,13 @@ module MarketData = struct
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum MarketDataSnapshot);
       set_cs_symbol_id cs t.symbol_id;
-      set_cs_session_settlement_price cs @@ Int64.bits_of_float t.dly_settlement_price;
-      set_cs_session_open cs @@ Int64.bits_of_float t.dly_o;
-      set_cs_session_high cs @@ Int64.bits_of_float t.dly_h;
-      set_cs_session_low cs @@ Int64.bits_of_float t.dly_l;
-      set_cs_session_volume cs @@ Int64.bits_of_float t.dly_v;
-      set_cs_session_number_of_trades cs @@ Int32.of_int_exn t.dly_n;
-      set_cs_open_interest cs @@ Int32.of_int_exn t.open_interest;
+      set_cs_session_settlement_price cs @@ Int64.bits_of_float t.session_settlement_price;
+      set_cs_session_open cs @@ Int64.bits_of_float t.session_o;
+      set_cs_session_high cs @@ Int64.bits_of_float t.session_h;
+      set_cs_session_low cs @@ Int64.bits_of_float t.session_l;
+      set_cs_session_volume cs @@ Int64.bits_of_float t.session_v;
+      set_cs_session_number_of_trades cs t.session_n;
+      set_cs_open_interest cs t.open_interest;
       set_cs_bid cs @@ Int64.bits_of_float t.bid;
       set_cs_ask cs @@ Int64.bits_of_float t.ask;
       set_cs_bid_qty cs @@ Int64.bits_of_float t.bid_qty;
@@ -746,7 +746,7 @@ module SecurityDefinition = struct
     let write cs ~request_id ~reason =
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum SecurityDefinitionReject);
-      set_cs_request_id cs @@ Int32.of_int_exn request_id;
+      set_cs_request_id cs request_id;
       set_cs_reason (bytes_with_msg reason Lengths.text_description) 0 cs
   end
 
@@ -895,7 +895,7 @@ module HistoricalPriceData = struct
       l: float [@default 0.];
       c: float [@default 0.];
       v: float [@default 0.];
-      num_trades: int [@default 0];
+      num_trades: int32 [@default 0l];
       bid_v: float [@default 0.];
       ask_v: float [@default 0.];
       final: bool [@default false];
@@ -911,7 +911,7 @@ module HistoricalPriceData = struct
       set_cs_l cs (Int64.bits_of_float t.l);
       set_cs_c cs (Int64.bits_of_float t.c);
       set_cs_v cs (Int64.bits_of_float t.v);
-      set_cs_num_trades cs (Int32.of_int_exn t.num_trades);
+      set_cs_num_trades cs t.num_trades;
       set_cs_bid_v cs (Int64.bits_of_float t.bid_v);
       set_cs_ask_v cs (Int64.bits_of_float t.ask_v);
       set_cs_final cs (int_of_bool t.final)
@@ -1097,7 +1097,7 @@ module Trading = struct
     let write cs o =
       set_cs_size cs sizeof_cs;
       set_cs__type cs @@ msg_to_enum CurrentPositionsReject;
-      set_cs_request_id cs @@ Int32.of_int_exn o#request_id;
+      set_cs_request_id cs o#request_id;
       set_cs_reason (bytes_with_msg o#reason 96) 0 cs
   end
 

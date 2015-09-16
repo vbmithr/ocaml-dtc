@@ -17,7 +17,7 @@ class granulator ~request_id ~record_interval ~writer =
       nb_streamed <- 0;
       record <- create ~request_id ()
     method final =
-      if record.num_trades <> 0 then begin
+      if record.num_trades <> 0l then begin
         to_cstruct buf record;
         write_cstruct writer buf;
         nb_streamed <- succ nb_streamed
@@ -30,10 +30,10 @@ class granulator ~request_id ~record_interval ~writer =
       nb_processed <- succ nb_processed;
       let p = Int64.to_float p /. 1e8 in
       let v = Int64.to_float v /. 1e8 in
-      if record.num_trades = 0 then
+      if record.num_trades = 0l then
         record <-
           create ~request_id ~start_ts:ts ~o:p ~h:p ~l:p ~c:p ~v
-            ~num_trades:1
+            ~num_trades:1l
             ~bid_v:(if d = `Sell then v else 0.)
             ~ask_v:(if d = `Buy then v else 0.)
             ~final:false ()
@@ -45,7 +45,7 @@ class granulator ~request_id ~record_interval ~writer =
             l = min record.l p;
             c = p;
             v = record.v +. v;
-            num_trades = succ record.num_trades;
+            num_trades = Int32.(succ record.num_trades);
             bid_v = if d = `Sell then record.bid_v +. v else record.bid_v;
             ask_v = if d = `Buy then record.ask_v +. v else record.ask_v;
           };
@@ -56,7 +56,7 @@ class granulator ~request_id ~record_interval ~writer =
         nb_streamed <- succ nb_streamed;
         record <-
           create ~request_id ~start_ts:ts ~o:p ~h:p ~l:p ~c:p ~v
-            ~num_trades:1
+            ~num_trades:1l
             ~bid_v:(if d = `Sell then v else 0.)
             ~ask_v:(if d = `Buy then v else 0.) ()
       end
