@@ -51,16 +51,16 @@ type msg =
   | MarketDataUpdateBidAskCompact [@value 117]
   | MarketDataUpdateBidAskInt [@value 127]
 
-  | MarketDataUpdateDailyOpen [@value 120]
-  | MarketDataUpdateDailyOpenInt [@value 128]
-  | MarketDataUpdateDailyHigh [@value 114]
-  | MarketDataUpdateDailyHighInt [@value 129]
-  | MarketDataUpdateDailyLow [@value 115]
-  | MarketDataUpdateDailyLowInt [@value 130]
-  | MarketDataUpdateDailyVolume [@value 113]
+  | MarketDataUpdateSessionOpen [@value 120]
+  | MarketDataUpdateSessionOpenInt [@value 128]
+  | MarketDataUpdateSessionHigh [@value 114]
+  | MarketDataUpdateSessionHighInt [@value 129]
+  | MarketDataUpdateSessionLow [@value 115]
+  | MarketDataUpdateSessionLowInt [@value 130]
+  | MarketDataUpdateSessionVolume [@value 113]
   | MarketDataUpdateOpenInterest [@value 124]
-  | MarketDataUpdateDailySettlement [@value 119]
-  | MarketDataUpdateDailySettlementInt [@value 131]
+  | MarketDataUpdateSessionSettlement [@value 119]
+  | MarketDataUpdateSessionSettlementInt [@value 131]
 
   | MarketDepthRequest [@value 102]
   | MarketDepthReject [@value 121]
@@ -522,12 +522,12 @@ module MarketData = struct
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum MarketDataSnapshot);
       set_cs_symbol_id cs t.symbol_id;
-      set_cs_daily_settlement_price cs @@ Int64.bits_of_float t.dly_settlement_price;
-      set_cs_daily_open cs @@ Int64.bits_of_float t.dly_o;
-      set_cs_daily_high cs @@ Int64.bits_of_float t.dly_h;
-      set_cs_daily_low cs @@ Int64.bits_of_float t.dly_l;
-      set_cs_daily_volume cs @@ Int64.bits_of_float t.dly_v;
-      set_cs_daily_number_of_trades cs @@ Int32.of_int_exn t.dly_n;
+      set_cs_session_settlement_price cs @@ Int64.bits_of_float t.dly_settlement_price;
+      set_cs_session_open cs @@ Int64.bits_of_float t.dly_o;
+      set_cs_session_high cs @@ Int64.bits_of_float t.dly_h;
+      set_cs_session_low cs @@ Int64.bits_of_float t.dly_l;
+      set_cs_session_volume cs @@ Int64.bits_of_float t.dly_v;
+      set_cs_session_number_of_trades cs @@ Int32.of_int_exn t.dly_n;
       set_cs_open_interest cs @@ Int32.of_int_exn t.open_interest;
       set_cs_bid cs @@ Int64.bits_of_float t.bid;
       set_cs_ask cs @@ Int64.bits_of_float t.ask;
@@ -584,8 +584,8 @@ module MarketData = struct
       set_cs_ts cs @@ Int32.of_float ts
   end
 
-  module UpdateDaily = struct
-    include MarketData.UpdateDaily
+  module UpdateSession = struct
+    include MarketData.UpdateSession
     type t = {
       kind: [`Open | `High | `Low | `Volume | `Settlement];
       symbol_id: int;
@@ -593,11 +593,11 @@ module MarketData = struct
     } [@@deriving show,create]
 
     let kind_to_msg = function
-      | `Open -> MarketDataUpdateDailyOpen
-      | `High -> MarketDataUpdateDailyHigh
-      | `Low -> MarketDataUpdateDailyLow
-      | `Volume -> MarketDataUpdateDailyVolume
-      | `Settlement -> MarketDataUpdateDailySettlement
+      | `Open -> MarketDataUpdateSessionOpen
+      | `High -> MarketDataUpdateSessionHigh
+      | `Low -> MarketDataUpdateSessionLow
+      | `Volume -> MarketDataUpdateSessionVolume
+      | `Settlement -> MarketDataUpdateSessionSettlement
 
     let to_cstruct cs t =
       set_cs_size cs sizeof_cs;
@@ -728,14 +728,14 @@ module SecurityDefinition = struct
   module Request = struct
     include SecurityDefinition.Request
     type t = {
-      id: int;
+      id: int32;
       symbol: string;
       exchange: string;
     } [@@deriving show,create]
 
     let read cs =
       create
-        ~id:(get_cs_request_id cs |> Int32.to_int_exn)
+        ~id:(get_cs_request_id cs)
         ~symbol:(get_cs_symbol cs |> cstring_of_cstruct)
         ~exchange:(get_cs_exchange cs |> cstring_of_cstruct)
         ()
@@ -809,7 +809,7 @@ module HistoricalPriceData = struct
   module Request = struct
     include HistoricalPriceData.Request
     type t = {
-      request_id: int;
+      request_id: int32;
       symbol: string;
       exchange: string;
       record_interval: int [@default 0];
@@ -823,7 +823,7 @@ module HistoricalPriceData = struct
 
     let read cs =
       create
-        ~request_id:(get_cs_request_id cs |> Int32.to_int_exn)
+        ~request_id:(get_cs_request_id cs)
         ~symbol:(get_cs_symbol cs |> cstring_of_cstruct)
         ~exchange:(get_cs_exchange cs |> cstring_of_cstruct)
         ~record_interval:(get_cs_record_interval cs |> Int32.to_int_exn)
@@ -838,7 +838,7 @@ module HistoricalPriceData = struct
     let to_cstruct cs t =
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum HistoricalPriceDataRequest);
-      set_cs_request_id cs (t.request_id |> Int32.of_int_exn);
+      set_cs_request_id cs (t.request_id);
       set_cs_symbol (bytes_with_msg t.symbol Lengths.symbol) 0 cs;
       set_cs_exchange (bytes_with_msg t.exchange Lengths.exchange) 0 cs;
       set_cs_record_interval cs (t.record_interval |> Int32.of_int_exn);
@@ -854,21 +854,21 @@ module HistoricalPriceData = struct
   module Reject = struct
     include HistoricalPriceData.Reject
     type t = {
-      request_id: int;
+      request_id: int32;
       reason: string;
     } [@@deriving show,create]
 
     let to_cstruct cs t =
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum HistoricalPriceDataReject);
-      set_cs_request_id cs Int32.(of_int_exn t.request_id);
+      set_cs_request_id cs t.request_id;
       set_cs_reason (bytes_with_msg t.reason Lengths.text_description) 0 cs
   end
 
   module Header = struct
     include HistoricalPriceData.Header
     type t = {
-      request_id: int;
+      request_id: int32;
       record_ival: int;
       zlib: bool [@default false];
       empty: bool [@default false];
@@ -878,7 +878,7 @@ module HistoricalPriceData = struct
     let to_cstruct cs t =
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum HistoricalPriceDataResponseHeader);
-      set_cs_request_id cs (Int32.of_int_exn t.request_id);
+      set_cs_request_id cs t.request_id;
       set_cs_record_ival cs (Int32.of_int_exn t.record_ival);
       set_cs_zlib cs (int_of_bool t.zlib);
       set_cs_empty cs (int_of_bool t.empty);
@@ -888,7 +888,7 @@ module HistoricalPriceData = struct
   module Record = struct
     include HistoricalPriceData.Record
     type t = {
-      request_id: int;
+      request_id: int32;
       start_ts: int64 [@default 0L];
       o: float [@default 0.];
       h: float [@default 0.];
@@ -904,7 +904,7 @@ module HistoricalPriceData = struct
     let to_cstruct cs t =
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum HistoricalPriceDataRecordResponse);
-      set_cs_request_id cs (Int32.of_int_exn t.request_id);
+      set_cs_request_id cs t.request_id;
       set_cs_start cs Int64.(t.start_ts / 1_000_000_000L);
       set_cs_o cs (Int64.bits_of_float t.o);
       set_cs_h cs (Int64.bits_of_float t.h);
@@ -923,7 +923,7 @@ module HistoricalPriceData = struct
     let write ?(final=false) ~request_id ~ts ~p ~v ~side cs =
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum HistoricalPriceDataTickRecordResponse);
-      set_cs_request_id cs (Int32.of_int_exn request_id);
+      set_cs_request_id cs request_id;
       set_cs_timestamp cs (Int64.bits_of_float @@ Int64.to_float ts /. 1e9);
       set_cs_direction cs (side_to_enum side);
       set_cs_price cs (Int64.to_float p /. 1e8 |> Int64.bits_of_float);
@@ -1137,14 +1137,14 @@ module Trading = struct
     module Request = struct
       include Trading.HistoricalOrderFillsRequest
       type t = {
-        id: int;
+        id: int32;
         srv_order_id: string;
         nb_of_days: int;
         trade_account: string;
       } [@@deriving show,create]
 
       let read cs =
-        let id = get_cs_request_id cs |> Int32.to_int_exn in
+        let id = get_cs_request_id cs in
         let srv_order_id = get_cs_server_order_id cs |> cstring_of_cstruct in
         let nb_of_days = get_cs_number_of_days cs |> Int32.to_int_exn in
         let trade_account = get_cs_trade_account cs |> cstring_of_cstruct in
@@ -1171,7 +1171,7 @@ module Trading = struct
           cs =
         set_cs_size cs sizeof_cs;
         set_cs__type cs @@ msg_to_enum HistoricalOrderFillResponse;
-        set_cs_request_id cs @@ Int32.of_int_exn request_id;
+        set_cs_request_id cs request_id;
         set_cs_nb_msgs cs @@ Int32.of_int_exn nb_msgs;
         set_cs_msg_number cs @@ Int32.of_int_exn msg_number;
         set_cs_symbol (bytes_with_msg symbol Lengths.symbol) 0 cs;

@@ -97,12 +97,12 @@ module MarketData = struct
       uint16_t _type;
       uint16_t symbol_id;
       uint16_t __padding;
-      uint64_t daily_settlement_price;
-      uint64_t daily_open;
-      uint64_t daily_high;
-      uint64_t daily_low;
-      uint64_t daily_volume;
-      uint32_t daily_number_of_trades;
+      uint64_t session_settlement_price;
+      uint64_t session_open;
+      uint64_t session_high;
+      uint64_t session_low;
+      uint64_t session_volume;
+      uint32_t session_number_of_trades;
       uint32_t open_interest;
       uint64_t bid;
       uint64_t ask;
@@ -142,7 +142,7 @@ module MarketData = struct
     } as little_endian
   end
 
-  module UpdateDaily = struct
+  module UpdateSession = struct
     cstruct cs {
       uint16_t size;
       uint16_t _type;

@@ -1,5 +1,5 @@
 class granulator :
-  request_id:int ->
+  request_id:int32 ->
   record_interval:int64 ->
   writer:Async_unix.Writer.t ->
   object
