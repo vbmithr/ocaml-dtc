@@ -753,10 +753,10 @@ module SecurityDefinition = struct
   module Response = struct
     include SecurityDefinition.Response
     type t = {
-      request_id: int [@default 0];
+      request_id: int32 [@default 0l];
       symbol: string;
       exchange: string;
-      security_type: security [@default `Forex];
+      security_type: security;
       descr: string;
       min_price_increment: float;
       price_display_format: price_display_format;
@@ -765,21 +765,21 @@ module SecurityDefinition = struct
       multiplier: float [@default 0.];
       divisor: float [@default 0.];
       underlying_symbol: string [@default ""];
-      updates_bid_ask_only: bool;
-      strike_price: float [@default 0.];
-      put_or_call: put_or_call [@default `Unset];
-      short_interest: int32 [@default 0l];
-      expiration_date: int32 [@default 0l];
-      buy_rollover_interest: float [@default 0.];
-      sell_rollover_interest: float [@default 0.];
-      earnings_per_share: float [@default 0.];
-      shares_outstanding: int32 [@default 0l];
+      updates_bid_ask_only: bool [@default false];
+      strike_price: float [@default 0.]; (* only for options *)
+      put_or_call: put_or_call [@default `Unset]; (* only for options *)
+      short_interest: int32 [@default 0l]; (* only for stock *)
+      expiration_date: int32 [@default 0l]; (* only for futures/options *)
+      buy_rollover_interest: float [@default 0.]; (* only for forex *)
+      sell_rollover_interest: float [@default 0.]; (* only for forex *)
+      earnings_per_share: float [@default 0.]; (* only for stock *)
+      shares_outstanding: int32 [@default 0l]; (* only for stock *)
     } [@@deriving show,create]
 
     let to_cstruct cs t =
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum SecurityDefinitionResponse);
-      set_cs_request_id cs @@ Int32.of_int_exn t.request_id;
+      set_cs_request_id cs t.request_id;
       set_cs_symbol (bytes_with_msg t.symbol Lengths.symbol) 0 cs;
       set_cs_exchange (bytes_with_msg t.exchange Lengths.exchange) 0 cs;
       set_cs_security_type cs @@ Int32.of_int_exn (security_to_enum t.security_type);
