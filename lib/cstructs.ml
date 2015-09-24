@@ -440,208 +440,216 @@ module Account = struct
 end
 
 module Trading = struct
-  module SubmitNewSingleOrder = struct
-    cstruct cs {
-      uint16_t size;
-      uint16_t _type;
-      uint8_t symbol[64];
-      uint8_t exchange[16];
-      uint8_t trade_account[32];
-      uint8_t order_id[32];
-      int32_t order_type; (* aligned *)
-      int32_t buy_sell;
-      uint32_t __padding;
-      uint64_t price1;
-      uint64_t price2;
-      uint64_t qty;
-      int32_t tif;
-      uint32_t ___padding;
-      int64_t good_till_ts;
-      uint8_t automated;
-      uint8_t parent;
-      uint8_t text[48];
-      uint16_t ____padding;
-      int32_t open_or_close;
-    } as little_endian
+  module Order = struct
+    module Submit = struct
+      cstruct cs {
+        uint16_t size;
+        uint16_t _type;
+        uint8_t symbol[64];
+        uint8_t exchange[16];
+        uint8_t trade_account[32];
+        uint8_t order_id[32];
+        int32_t order_type; (* aligned *)
+        int32_t buy_sell;
+        uint32_t __padding;
+        uint64_t price1;
+        uint64_t price2;
+        uint64_t qty;
+        int32_t tif;
+        uint32_t ___padding;
+        int64_t good_till_ts;
+        uint8_t automated;
+        uint8_t parent;
+        uint8_t text[48];
+        uint16_t ____padding;
+        int32_t open_or_close;
+      } as little_endian
+    end
+
+    module SubmitOCO = struct
+      cstruct cs {
+        uint16_t size;
+        uint16_t _type;
+        uint8_t symbol[64];
+        uint8_t exchange[16];
+        uint8_t order_id_1[32];
+        int32_t order_type_1; (* aligned *)
+        int32_t buy_sell_1;
+        uint32_t __padding;
+        uint64_t price1_1;
+        uint64_t price2_1;
+        uint64_t qty_1;
+        uint8_t order_id_2[32];
+        int32_t order_type_2;
+        int32_t buy_sell_2;
+        uint64_t price1_2;
+        uint64_t price2_2;
+        uint64_t qty_2;
+        int32_t tif;
+        uint32_t ___padding;
+        int64_t good_till_ts;
+        uint8_t trade_account[32];
+        uint8_t automated;
+        uint8_t parent[32];
+        uint8_t text[48];
+        uint8_t ____padding[3];
+        int32_t open_or_close;
+      } as little_endian
+    end
+
+    module CancelReplace = struct
+      cstruct cs {
+        uint16_t size;
+        uint16_t _type;
+        uint8_t server_order_id[32];
+        uint8_t client_order_id[32];
+        uint64_t price1;
+        uint64_t price2;
+        uint64_t qty;
+        uint8_t price1_set;
+        uint8_t price2_set;
+      } as little_endian
+    end
+
+    module Cancel = struct
+      cstruct cs {
+        uint16_t size;
+        uint16_t _type;
+        uint8_t server_order_id[32];
+        uint8_t client_order_id[32];
+      } as little_endian
+    end
+
+    module Open = struct
+      module Request = struct
+        cstruct cs {
+          uint16_t size;
+          uint16_t _type;
+          int32_t request_id;
+          int32_t request_all_orders;
+          uint8_t server_order_id[32];
+        } as little_endian
+      end
+
+      module Reject = struct
+        cstruct cs {
+          uint16_t size;
+          uint16_t _type;
+          int32_t request_id;
+          uint8_t reason[96];
+        } as little_endian
+      end
+    end
+
+    module Update = struct
+      cstruct cs {
+        uint16_t size;
+        uint16_t _type;
+        int32_t request_id; (* aligned *)
+        int32_t nb_msgs;
+        int32_t msg_number; (* aligned *)
+        uint8_t symbol[64];
+        uint8_t exchange[16];
+        uint8_t previous_server_order_id[32];
+        uint8_t server_order_id[32];
+        uint8_t client_order_id[32];
+        uint8_t exchange_order_id[32];
+        int32_t order_status;
+        int32_t order_update_reason; (* aligned *)
+        int32_t order_type;
+        int32_t buy_sell; (* aligned *)
+        uint64_t price1;
+        uint64_t price2;
+        int32_t tif;
+        uint32_t __padding; (* aligned *)
+        int64_t good_till_ts;
+        uint64_t order_qty;
+        uint64_t filled_qty;
+        uint64_t remaining_qty;
+        uint64_t avgfillprice;
+        uint64_t lastfillprice;
+        int64_t lastfilldatetime;
+        uint64_t lastfillqty;
+        uint8_t fillexecution_id[64];
+        uint8_t trade_account[32];
+        uint8_t text[96];
+        uint8_t no_orders;
+        uint8_t parent_server_order_id[32];
+        uint8_t oco_linked_order_server_order_id[32];
+      } as little_endian
+    end
+
+    module Fills = struct
+      module Request = struct
+        cstruct cs {
+          uint16_t size;
+          uint16_t _type;
+          int32_t request_id;
+          uint8_t server_order_id[32];
+          int32_t number_of_days;
+          uint8_t trade_account[32];
+        } as little_endian
+      end
+
+      module Response = struct
+        cstruct cs {
+          uint16_t size;
+          uint16_t _type;
+          int32_t request_id;
+          int32_t nb_msgs;
+          int32_t msg_number;
+          uint8_t symbol[64];
+          uint8_t exchange[16];
+          uint8_t server_order_id[32];
+          int32_t buy_sell;
+          int32_t __padding;
+          uint64_t price;
+          int64_t ts;
+          uint64_t qty;
+          uint8_t unique_exec_id[64];
+          uint8_t trade_account[32];
+          int32_t open_close;
+          uint8_t no_order_fills;
+        } as little_endian
+      end
+    end
   end
 
-  module SubmitNewOCOOrder = struct
-    cstruct cs {
-      uint16_t size;
-      uint16_t _type;
-      uint8_t symbol[64];
-      uint8_t exchange[16];
-      uint8_t order_id_1[32];
-      int32_t order_type_1; (* aligned *)
-      int32_t buy_sell_1;
-      uint32_t __padding;
-      uint64_t price1_1;
-      uint64_t price2_1;
-      uint64_t qty_1;
-      uint8_t order_id_2[32];
-      int32_t order_type_2;
-      int32_t buy_sell_2;
-      uint64_t price1_2;
-      uint64_t price2_2;
-      uint64_t qty_2;
-      int32_t tif;
-      uint32_t ___padding;
-      int64_t good_till_ts;
-      uint8_t trade_account[32];
-      uint8_t automated;
-      uint8_t parent[32];
-      uint8_t text[48];
-      uint8_t ____padding[3];
-      int32_t open_or_close;
-    } as little_endian
-  end
+  module Position = struct
+    module Request = struct
+      cstruct cs {
+        uint16_t size;
+        uint16_t _type;
+        int32_t request_id;
+        uint8_t trade_account[32];
+      } as little_endian
+    end
 
-  module CancelReplaceOrder = struct
-    cstruct cs {
-      uint16_t size;
-      uint16_t _type;
-      uint8_t server_order_id[32];
-      uint8_t client_order_id[32];
-      uint64_t price1;
-      uint64_t price2;
-      uint64_t qty;
-      uint8_t price1_set;
-      uint8_t price2_set;
-    } as little_endian
-  end
+    module Update = struct
+      cstruct cs {
+        uint16_t size;
+        uint16_t _type;
+        int32_t request_id;
+        int32_t nb_msgs;
+        int32_t msg_number;
+        uint8_t symbol[64];
+        uint8_t exchange[16];
+        uint64_t qty;
+        uint64_t avg_price;
+        uint8_t position_id[32];
+        uint8_t trade_account[32];
+        uint8_t no_positions;
+        uint8_t unsolicited;
+      } as little_endian
+    end
 
-  module CancelOrder = struct
-    cstruct cs {
-      uint16_t size;
-      uint16_t _type;
-      uint8_t server_order_id[32];
-      uint8_t client_order_id[32];
-    } as little_endian
-  end
-
-  module OpenOrdersRequest = struct
-    cstruct cs {
-      uint16_t size;
-      uint16_t _type;
-      int32_t request_id;
-      int32_t request_all_orders;
-      uint8_t server_order_id[32];
-    } as little_endian
-  end
-
-  module OrderUpdate = struct
-    cstruct cs {
-      uint16_t size;
-      uint16_t _type;
-      int32_t request_id; (* aligned *)
-      int32_t nb_msgs;
-      int32_t msg_number; (* aligned *)
-      uint8_t symbol[64];
-      uint8_t exchange[16];
-      uint8_t previous_server_order_id[32];
-      uint8_t server_order_id[32];
-      uint8_t client_order_id[32];
-      uint8_t exchange_order_id[32];
-      int32_t order_status;
-      int32_t order_update_reason; (* aligned *)
-      int32_t order_type;
-      int32_t buy_sell; (* aligned *)
-      uint64_t price1;
-      uint64_t price2;
-      int32_t tif;
-      uint32_t __padding; (* aligned *)
-      int64_t good_till_ts;
-      uint64_t order_qty;
-      uint64_t filled_qty;
-      uint64_t remaining_qty;
-      uint64_t avgfillprice;
-      uint64_t lastfillprice;
-      int64_t lastfilldatetime;
-      uint64_t lastfillqty;
-      uint8_t fillexecution_id[64];
-      uint8_t trade_account[32];
-      uint8_t text[96];
-      uint8_t no_orders;
-      uint8_t parent_server_order_id[32];
-      uint8_t oco_linked_order_server_order_id[32];
-    } as little_endian
-  end
-
-  module OpenOrdersReject = struct
-    cstruct cs {
-      uint16_t size;
-      uint16_t _type;
-      int32_t request_id;
-      uint8_t reason[96];
-    } as little_endian
-  end
-
-  module HistoricalOrderFillsRequest = struct
-    cstruct cs {
-      uint16_t size;
-      uint16_t _type;
-      int32_t request_id;
-      uint8_t server_order_id[32];
-      int32_t number_of_days;
-      uint8_t trade_account[32];
-    } as little_endian
-  end
-
-  module HistoricalOrderFillResponse = struct
-    cstruct cs {
-      uint16_t size;
-      uint16_t _type;
-      int32_t request_id;
-      int32_t nb_msgs;
-      int32_t msg_number;
-      uint8_t symbol[64];
-      uint8_t exchange[16];
-      uint8_t server_order_id[32];
-      int32_t buy_sell;
-      int32_t __padding;
-      uint64_t price;
-      int64_t ts;
-      uint64_t qty;
-      uint8_t unique_exec_id[64];
-      uint8_t trade_account[32];
-      int32_t open_close;
-      uint8_t no_order_fills;
-    } as little_endian
-  end
-
-  module CurrentPositionsRequest = struct
-    cstruct cs {
-      uint16_t size;
-      uint16_t _type;
-      int32_t request_id;
-      uint8_t trade_account[32];
-    } as little_endian
-  end
-
-  module PositionUpdate = struct
-    cstruct cs {
-      uint16_t size;
-      uint16_t _type;
-      int32_t request_id;
-      int32_t nb_msgs;
-      int32_t msg_number;
-      uint8_t symbol[64];
-      uint8_t exchange[16];
-      uint64_t qty;
-      uint64_t avg_price;
-      uint8_t position_id[32];
-      uint8_t trade_account[32];
-      uint8_t no_positions;
-      uint8_t unsolicited;
-    } as little_endian
-  end
-
-  module CurrentPositionsReject = struct
-    cstruct cs {
-      uint16_t size;
-      uint16_t _type;
-      int32_t request_id;
-      uint8_t reason[96];
-    } as little_endian
+    module Reject = struct
+      cstruct cs {
+        uint16_t size;
+        uint16_t _type;
+        int32_t request_id;
+        uint8_t reason[96];
+      } as little_endian
+    end
   end
 end
