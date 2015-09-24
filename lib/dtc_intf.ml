@@ -1229,6 +1229,15 @@ module Account = struct
           ()
     end
 
+    module Reject = struct
+      include Account.Balance.Reject
+      let write ~request_id ~reason cs =
+        set_cs_size cs sizeof_cs;
+        set_cs__type cs @@ msg_to_enum AccountBalanceReject;
+        set_cs_request_id cs request_id;
+        set_cs_reason (bytes_with_msg reason Lengths.text_description) 0 cs;
+    end
+
     module Update = struct
       include Account.Balance.Update
       let write ?(request_id=0l)
