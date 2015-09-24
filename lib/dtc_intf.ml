@@ -1241,8 +1241,12 @@ module Account = struct
     module Update = struct
       include Account.Balance.Update
       let write ?(request_id=0l)
-          ~cash_balance ~balance_available ~currency
-          ~trade_account ~securities_value ~margin_requirement
+          ?(cash_balance=0.)
+          ?(balance_available=0.)
+          ?(currency="")
+          ?(trade_account="")
+          ?(securities_value=0.)
+          ?(margin_requirement=0.)
           cs =
         set_cs_size cs sizeof_cs;
         set_cs__type cs @@ msg_to_enum AccountBalanceUpdate;
