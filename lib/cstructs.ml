@@ -625,6 +625,15 @@ module Trading = struct
       } as little_endian
     end
 
+    module Reject = struct
+      cstruct cs {
+        uint16_t size;
+        uint16_t _type;
+        int32_t request_id;
+        uint8_t reason[96];
+      } as little_endian
+    end
+
     module Update = struct
       cstruct cs {
         uint16_t size;
@@ -640,15 +649,6 @@ module Trading = struct
         uint8_t trade_account[32];
         uint8_t no_positions;
         uint8_t unsolicited;
-      } as little_endian
-    end
-
-    module Reject = struct
-      cstruct cs {
-        uint16_t size;
-        uint16_t _type;
-        int32_t request_id;
-        uint8_t reason[96];
       } as little_endian
     end
   end

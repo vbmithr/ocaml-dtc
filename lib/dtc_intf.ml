@@ -304,11 +304,11 @@ open Cstructs
 
 let bytes_with_msg msg len =
   let buf = Bytes.create len in
-  Binary_packing.pack_padded_fixed_string ~buf ~pos:0 ~len msg;
+  Binary_packing.pack_tail_padded_fixed_string ~buf ~pos:0 ~len msg;
   buf
 
 let cstring_of_cstruct cs =
-  Cstruct.(Bigstring.get_padded_fixed_string
+  Cstruct.(Bigstring.get_tail_padded_fixed_string
              ~padding:'\x00' cs.buffer ~pos:cs.off ~len:cs.len ())
 
 module Encoding = struct
@@ -1154,16 +1154,15 @@ module Trading = struct
 
     module Reject = struct
       include Trading.Position.Reject
-      let write cs o =
+      let write cs ~request_id ~reason =
         set_cs_size cs sizeof_cs;
         set_cs__type cs @@ msg_to_enum CurrentPositionsReject;
-        set_cs_request_id cs o#request_id;
-        set_cs_reason (bytes_with_msg o#reason 96) 0 cs
+        set_cs_request_id cs request_id;
+        set_cs_reason (bytes_with_msg reason 96) 0 cs
     end
 
     module Update = struct
       include Trading.Position.Update
-
       let write
           ?(trade_account="")
           ?(position_id="")
