@@ -303,6 +303,7 @@ module SecurityDefinition = struct
       uint32_t sell_rollover_interest;
       uint32_t earnings_per_share;
       uint32_t shares_outstanding;
+      uint32_t qty_divisor;
     } as little_endian
   end
 end

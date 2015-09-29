@@ -774,6 +774,7 @@ module SecurityDefinition = struct
       sell_rollover_interest: float [@default 0.]; (* only for forex *)
       earnings_per_share: float [@default 0.]; (* only for stock *)
       shares_outstanding: int32 [@default 0l]; (* only for stock *)
+      qty_divisor: float [@default 0.];
     } [@@deriving show,create]
 
     let to_cstruct cs t =
@@ -801,7 +802,8 @@ module SecurityDefinition = struct
       set_cs_buy_rollover_interest cs @@ Int32.bits_of_float t.buy_rollover_interest;
       set_cs_sell_rollover_interest cs @@ Int32.bits_of_float t.sell_rollover_interest;
       set_cs_earnings_per_share cs @@ Int32.bits_of_float t.earnings_per_share;
-      set_cs_shares_outstanding cs t.shares_outstanding
+      set_cs_shares_outstanding cs t.shares_outstanding;
+      set_cs_qty_divisor cs @@ Int32.bits_of_float t.qty_divisor;
   end
 end
 
