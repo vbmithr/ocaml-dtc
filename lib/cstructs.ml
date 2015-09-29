@@ -374,7 +374,7 @@ module HistoricalPriceData = struct
       uint16_t _type;
       int32_t request_id;
       int64_t timestamp;
-      uint16_t direction;
+      uint16_t side;
       uint16_t __padding[3];
       int64_t price;
       int64_t volume;
