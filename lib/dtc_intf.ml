@@ -452,11 +452,13 @@ module Logon = struct
 
   module Logoff = struct
     include Logon.Logoff
-    let write cs ~reason ~reconnect =
-      set_cs_size cs sizeof_cs;
-      set_cs__type cs (msg_to_enum Logoff);
-      set_cs_reason (bytes_with_msg reason Lengths.text_description) 0 cs;
-      set_cs_do_not_reconnect cs @@ int_of_bool (not reconnect)
+    let write cs ~reconnect k =
+      Printf.ksprintf (fun reason ->
+          set_cs_size cs sizeof_cs;
+          set_cs__type cs (msg_to_enum Logoff);
+          set_cs_reason (bytes_with_msg reason Lengths.text_description) 0 cs;
+          set_cs_do_not_reconnect cs @@ int_of_bool (not reconnect)
+        ) k
   end
 end
 
@@ -483,16 +485,13 @@ module MarketData = struct
 
   module Reject = struct
     include MarketData.Reject
-    type t = {
-      symbol_id: int;
-      reason: string;
-    } [@@deriving show,create]
-
-    let to_cstruct cs t =
-      set_cs_size cs sizeof_cs;
-      set_cs__type cs (msg_to_enum MarketDataReject);
-      set_cs_symbol_id cs t.symbol_id;
-      set_cs_reason (bytes_with_msg t.reason Lengths.text_description) 0 cs
+    let write cs symbol_id k =
+      Printf.ksprintf (fun reason ->
+          set_cs_size cs sizeof_cs;
+          set_cs__type cs (msg_to_enum MarketDataReject);
+          set_cs_symbol_id cs symbol_id;
+          set_cs_reason (bytes_with_msg reason Lengths.text_description) 0 cs
+        ) k
   end
 
   module Snapshot = struct
@@ -647,16 +646,13 @@ module MarketDepth = struct
 
   module Reject = struct
     include MarketDepth.Reject
-    type t = {
-      symbol_id: int;
-      reason: string;
-    } [@@deriving show,create]
-
-    let to_cstruct cs t =
-      set_cs_size cs sizeof_cs;
-      set_cs__type cs (msg_to_enum MarketDepthReject);
-      set_cs_symbol_id cs t.symbol_id;
-      set_cs_reason (bytes_with_msg t.reason Lengths.text_description) 0 cs
+    let to_cstruct cs symbol_id k =
+      Printf.ksprintf (fun reason ->
+          set_cs_size cs sizeof_cs;
+          set_cs__type cs (msg_to_enum MarketDepthReject);
+          set_cs_symbol_id cs symbol_id;
+          set_cs_reason (bytes_with_msg reason Lengths.text_description) 0 cs
+        ) k
   end
 
   module Snapshot = struct
@@ -743,11 +739,13 @@ module SecurityDefinition = struct
 
   module Reject = struct
     include SecurityDefinition.Reject
-    let write cs ~request_id ~reason =
-      set_cs_size cs sizeof_cs;
-      set_cs__type cs (msg_to_enum SecurityDefinitionReject);
-      set_cs_request_id cs request_id;
-      set_cs_reason (bytes_with_msg reason Lengths.text_description) 0 cs
+    let write cs request_id k =
+      Printf.ksprintf (fun reason ->
+          set_cs_size cs sizeof_cs;
+          set_cs__type cs (msg_to_enum SecurityDefinitionReject);
+          set_cs_request_id cs request_id;
+          set_cs_reason (bytes_with_msg reason Lengths.text_description) 0 cs
+        ) k
   end
 
   module Response = struct
@@ -855,16 +853,13 @@ module HistoricalPriceData = struct
 
   module Reject = struct
     include HistoricalPriceData.Reject
-    type t = {
-      request_id: int32;
-      reason: string;
-    } [@@deriving show,create]
-
-    let to_cstruct cs t =
-      set_cs_size cs sizeof_cs;
-      set_cs__type cs (msg_to_enum HistoricalPriceDataReject);
-      set_cs_request_id cs t.request_id;
-      set_cs_reason (bytes_with_msg t.reason Lengths.text_description) 0 cs
+    let write cs request_id k =
+      Printf.ksprintf (fun reason ->
+          set_cs_size cs sizeof_cs;
+          set_cs__type cs (msg_to_enum HistoricalPriceDataReject);
+          set_cs_request_id cs request_id;
+          set_cs_reason (bytes_with_msg reason Lengths.text_description) 0 cs
+        ) k
   end
 
   module Header = struct
@@ -1156,11 +1151,13 @@ module Trading = struct
 
     module Reject = struct
       include Trading.Position.Reject
-      let write cs ~request_id ~reason =
-        set_cs_size cs sizeof_cs;
-        set_cs__type cs @@ msg_to_enum CurrentPositionsReject;
-        set_cs_request_id cs request_id;
-        set_cs_reason (bytes_with_msg reason 96) 0 cs
+      let write cs request_id k =
+        Printf.ksprintf (fun reason ->
+            set_cs_size cs sizeof_cs;
+            set_cs__type cs @@ msg_to_enum CurrentPositionsReject;
+            set_cs_request_id cs request_id;
+            set_cs_reason (bytes_with_msg reason 96) 0 cs
+          ) k
     end
 
     module Update = struct
@@ -1237,11 +1234,13 @@ module Account = struct
 
     module Reject = struct
       include Account.Balance.Reject
-      let write ~request_id ~reason cs =
-        set_cs_size cs sizeof_cs;
-        set_cs__type cs @@ msg_to_enum AccountBalanceReject;
-        set_cs_request_id cs request_id;
-        set_cs_reason (bytes_with_msg reason Lengths.text_description) 0 cs;
+      let write cs request_id k =
+        Printf.ksprintf (fun reason ->
+            set_cs_size cs sizeof_cs;
+            set_cs__type cs @@ msg_to_enum AccountBalanceReject;
+            set_cs_request_id cs request_id;
+            set_cs_reason (bytes_with_msg reason Lengths.text_description) 0 cs
+          ) k
     end
 
     module Update = struct
