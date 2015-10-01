@@ -159,6 +159,7 @@ module MarketData = struct
       uint16_t symbol_id;
       uint16_t __padding;
       uint32_t open_interest;
+      uint32_t ___padding
     } as little_endian
   end
 end
