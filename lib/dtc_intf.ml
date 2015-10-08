@@ -1185,7 +1185,7 @@ module Trading = struct
         set_cs_qty cs @@ Int64.bits_of_float v;
         set_cs_avg_price cs @@ Int64.bits_of_float p;
         set_cs_position_id (bytes_with_msg position_id 32) 0 cs;
-        set_cs_trade_account (bytes_with_msg trade_account 32) 0 cs;
+        set_cs_trade_account (bytes_with_msg trade_account Lengths.trade_account) 0 cs;
         set_cs_no_positions cs @@ int_of_bool no_positions;
         set_cs_unsolicited cs @@ int_of_bool unsolicited
     end
