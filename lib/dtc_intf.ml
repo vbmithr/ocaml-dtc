@@ -646,7 +646,7 @@ module MarketDepth = struct
 
   module Reject = struct
     include MarketDepth.Reject
-    let to_cstruct cs symbol_id k =
+    let write cs symbol_id k =
       Printf.ksprintf (fun reason ->
           set_cs_size cs sizeof_cs;
           set_cs__type cs (msg_to_enum MarketDepthReject);
