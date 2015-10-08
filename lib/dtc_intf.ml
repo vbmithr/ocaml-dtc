@@ -303,6 +303,9 @@ type put_or_call = [`Unset | `Call | `Put] [@@deriving show,enum]
 open Cstructs
 
 let bytes_with_msg msg len =
+  let msg =
+    if String.length msg > len then String.sub msg 0 len
+    else msg in
   let buf = Bytes.create len in
   Binary_packing.pack_tail_padded_fixed_string ~buf ~pos:0 ~len msg;
   buf
