@@ -344,7 +344,7 @@ module Logon = struct
     type t = {
       protocol_version: int32;
       username: string;
-      password: string;
+      password: string [@opaque];
       general_text_data: string;
       integer_1: int32;
       integer_2: int32;
