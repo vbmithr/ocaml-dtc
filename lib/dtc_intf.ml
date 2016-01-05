@@ -333,6 +333,8 @@ module Encoding = struct
 
   module Response = struct
     let write cs =
+      set_cs_size cs sizeof_cs;
+      set_cs__type cs (msg_to_enum EncodingResponse);
       set_cs_version cs Int32.(of_int_exn current_version);
       set_cs_encoding cs Int32.(of_int_exn @@ encoding_to_enum `Binary)
   end
