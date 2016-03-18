@@ -108,8 +108,8 @@ let of_scid_record r =
     method side = if r.Scid.R.bid_volume = 0L then `Buy else `Sell
   end
 
-module LevelDB = struct
-  include LevelDB
+module LevelDB_ext = struct
+  open LevelDB
   let length db =
     let cnt = ref 0 in
     LevelDB.iter (fun _ _ -> incr cnt; true) db;
@@ -192,7 +192,7 @@ module File = struct
     Out_channel.output_string oc hdr;
     let cnt = ref 0 in
     Result.of_option
-      ~error:(Failure "bounds") (LevelDB.bounds db) >>= fun (min_elt, max_elt) ->
+      ~error:(Failure "bounds") (LevelDB_ext.bounds db) >>= fun (min_elt, max_elt) ->
     let nb_ticks = ref 0 in
     LevelDB.iter (fun k v ->
         incr nb_ticks;

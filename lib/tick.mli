@@ -31,9 +31,8 @@ val version : int
 
 val of_scid_record : Scid.R.t -> t
 
-
-module LevelDB : sig
-  include module type of LevelDB
+module LevelDB_ext : sig
+  open LevelDB
   val length : db -> int
   val bounds : db -> (t * t) option
   val mem_tick : db -> t -> bool
@@ -63,4 +62,3 @@ module File : sig
   val of_leveldb : ?start_ts:int64 -> ?end_ts:int64 -> LevelDB.db ->
     out_channel -> (int * (t * t) option, exn) Result.t
 end
-
