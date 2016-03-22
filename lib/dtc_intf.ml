@@ -394,6 +394,7 @@ module Logon = struct
       one_historical_price_request_per_connection: bool [@default false];
       bracket_orders_supported: bool [@default false];
       use_integer_price_order_messages: bool [@default false];
+      market_data_supported: bool [@default false];
     } [@@deriving show,create]
 
     let to_cstruct cs t =
@@ -405,35 +406,19 @@ module Logon = struct
       set_cs_reconnect_address (bytes_with_msg t.reconnect_address 64) 0 cs;
       set_cs_integer_1 cs t.integer_1;
       set_cs_server_name (bytes_with_msg t.server_name 60) 0 cs;
-      set_cs_market_depth_updates_best_bid_and_ask cs
-      @@ int_of_bool t.market_depth_updates_best_bid_and_ask;
-
+      set_cs_market_depth_updates_best_bid_and_ask cs @@ int_of_bool t.market_depth_updates_best_bid_and_ask;
       set_cs_trading_supported cs @@ int_of_bool t.trading_supported;
-
       set_cs_oco_orders_supported cs @@ int_of_bool t.oco_supported;
-
       set_cs_order_cancel_replace_supported cs @@ int_of_bool t.ocr_supported;
-      set_cs_symbol_exchange_delimiter
-        (bytes_with_msg t.symbol_exchange_delimiter 4) 0 cs;
-      set_cs_security_definitions_supported cs @@
-      int_of_bool t.security_definitions_supported;
-      set_cs_historical_price_data_supported cs @@
-      int_of_bool t.historical_price_data_supported;
-
-      set_cs_resubscribe_when_market_data_feed_available cs @@
-      int_of_bool t.resubscribe_when_market_data_feed_available;
-      set_cs_market_depth_supported cs @@
-
-      int_of_bool t.market_depth_supported;
-
-      set_cs_one_historical_price_request_per_connection cs @@
-      int_of_bool t.one_historical_price_request_per_connection;
-
-      set_cs_bracket_orders_supported cs @@
-      int_of_bool t.bracket_orders_supported;
-
-      set_cs_use_integer_price_order_messages cs @@
-      int_of_bool t.use_integer_price_order_messages
+      set_cs_symbol_exchange_delimiter (bytes_with_msg t.symbol_exchange_delimiter 4) 0 cs;
+      set_cs_security_definitions_supported cs @@ int_of_bool t.security_definitions_supported;
+      set_cs_historical_price_data_supported cs @@ int_of_bool t.historical_price_data_supported;
+      set_cs_resubscribe_when_market_data_feed_available cs @@ int_of_bool t.resubscribe_when_market_data_feed_available;
+      set_cs_market_depth_supported cs @@ int_of_bool t.market_depth_supported;
+      set_cs_one_historical_price_request_per_connection cs @@ int_of_bool t.one_historical_price_request_per_connection;
+      set_cs_bracket_orders_supported cs @@ int_of_bool t.bracket_orders_supported;
+      set_cs_use_integer_price_order_messages cs @@ int_of_bool t.use_integer_price_order_messages;
+      set_cs_market_data_supported cs @@ int_of_bool t.market_data_supported
   end
 
   module Heartbeat = struct
