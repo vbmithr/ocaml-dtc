@@ -48,6 +48,7 @@ module Logon = struct
       uint8_t one_historical_price_request_per_connection;
       uint8_t bracket_orders_supported;
       uint8_t use_integer_price_order_messages;
+      uint8_t uses_multiple_positions_per_symbol_and_trade_account;
       uint8_t market_data_supported;
     } as little_endian
   end

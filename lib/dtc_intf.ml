@@ -394,6 +394,7 @@ module Logon = struct
       one_historical_price_request_per_connection: bool [@default false];
       bracket_orders_supported: bool [@default false];
       use_integer_price_order_messages: bool [@default false];
+      multiple_positions_per_symbol_and_trade_account: bool [@default false];
       market_data_supported: bool [@default false];
     } [@@deriving show,create]
 
@@ -418,6 +419,7 @@ module Logon = struct
       set_cs_one_historical_price_request_per_connection cs @@ int_of_bool t.one_historical_price_request_per_connection;
       set_cs_bracket_orders_supported cs @@ int_of_bool t.bracket_orders_supported;
       set_cs_use_integer_price_order_messages cs @@ int_of_bool t.use_integer_price_order_messages;
+      set_cs_uses_multiple_positions_per_symbol_and_trade_account cs @@ int_of_bool t.multiple_positions_per_symbol_and_trade_account;
       set_cs_market_data_supported cs @@ int_of_bool t.market_data_supported
   end
 
