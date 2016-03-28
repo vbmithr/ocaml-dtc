@@ -311,8 +311,8 @@ let bytes_with_msg msg len =
   buf
 
 let cstring_of_cstruct cs =
-  Cstruct.(Bigstring.get_tail_padded_fixed_string
-             ~padding:'\x00' cs.buffer ~pos:cs.off ~len:cs.len ())
+  let cstring = Cstruct.to_string cs in
+  String.(sub cstring ~pos:0 ~len:(index_exn cstring '\x00'))
 
 module Encoding = struct
   include Encoding
