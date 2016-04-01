@@ -501,17 +501,23 @@ module Trading = struct
       } as little_endian
     end
 
-    module CancelReplace = struct
+    module Replace = struct
       cstruct cs {
         uint16_t size;
         uint16_t _type;
         uint8_t server_order_id[32];
         uint8_t client_order_id[32];
+        uint32_t _padding;
         uint64_t price1;
         uint64_t price2;
         uint64_t qty;
         uint8_t price1_set;
         uint8_t price2_set;
+        uint16_t __padding;
+        uint32_t order_type;
+        uint32_t tif;
+        uint32_t ___padding;
+        uint64_t good_till_ts;
       } as little_endian
     end
 

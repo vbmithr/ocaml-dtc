@@ -967,6 +967,36 @@ module Trading = struct
           ()
     end
 
+    module Replace = struct
+      include Trading.Order.Replace
+      type t = {
+        srv_ord_id: string;
+        cli_ord_id: string;
+        p1: float;
+        p2: float;
+        qty: float;
+        p1_set: bool;
+        p2_set: bool;
+        ord_type: order_type;
+        tif: time_in_force;
+        good_till_ts: int64;
+      } [@@deriving show,create]
+
+      let read cs =
+        create
+          ~srv_ord_id:(get_cs_server_order_id cs |> cstring_of_cstruct)
+          ~cli_ord_id:(get_cs_client_order_id cs |> cstring_of_cstruct)
+          ~p1:Int64.(float_of_bits @@ get_cs_price1 cs)
+          ~p2:Int64.(float_of_bits @@ get_cs_price2 cs)
+          ~qty:Int64.(float_of_bits @@ get_cs_qty cs)
+          ~p1_set:(get_cs_price1_set cs |> bool_of_int)
+          ~p2_set:(get_cs_price2_set cs |> bool_of_int)
+          ~ord_type:Option.(value_exn (get_cs_order_type cs |> Int32.to_int_exn |> order_type_of_enum))
+          ~tif:Option.(value_exn (get_cs_tif cs |> Int32.to_int_exn |> time_in_force_of_enum))
+          ~good_till_ts:(get_cs_good_till_ts cs)
+          ()
+    end
+
     module Cancel = struct
       include Trading.Order.Cancel
       type t = {
