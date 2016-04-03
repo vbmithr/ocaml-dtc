@@ -7,7 +7,7 @@ class granulator :
     val mutable nb_processed : int
     val mutable nb_streamed : int
     val mutable record : Dtc.HistoricalPriceData.Record.t
-    method add_tick : int64 -> int64 -> int64 -> [ `Buy | `Sell ] -> unit
+    method add_tick : int64 -> float -> float -> [ `Buy | `Sell ] -> unit
     method final : int * int
     method reset : unit
     method stats : int * int

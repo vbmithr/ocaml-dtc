@@ -915,8 +915,8 @@ module HistoricalPriceData = struct
       set_cs_request_id cs request_id;
       set_cs_timestamp cs (Int64.bits_of_float @@ Int64.to_float ts /. 1e9);
       set_cs_side cs (side_to_enum side);
-      set_cs_price cs (Int64.to_float p /. 1e8 |> Int64.bits_of_float);
-      set_cs_volume cs (Int64.to_float v /. 1e8 |> Int64.bits_of_float);
+      set_cs_price cs @@ Int64.bits_of_float p;
+      set_cs_volume cs @@ Int64.bits_of_float v;
       set_cs_final cs (int_of_bool final)
   end
 end

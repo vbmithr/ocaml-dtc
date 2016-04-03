@@ -28,8 +28,6 @@ class granulator ~request_id ~record_interval ~writer =
       nb_streamed, nb_processed
     method add_tick ts p v (d:[ `Buy | `Sell]) =
       nb_processed <- succ nb_processed;
-      let p = Int64.to_float p /. 1e8 in
-      let v = Int64.to_float v /. 1e8 in
       if record.num_trades = 0l then
         record <-
           create ~request_id ~start_ts:ts ~o:p ~h:p ~l:p ~c:p ~v
