@@ -1030,14 +1030,14 @@ module Trading = struct
           ?(buy_sell=`Unset)
           ?(p1=Float.max_finite_value)
           ?(p2=Float.max_finite_value)
-          ?(qty=0.)
+          ?(qty=Float.max_finite_value)
           ?(tif=`Unset)
           ?(good_till_ts=0L)
-          ?(filled_qty=0.)
-          ?(remaining_qty=0.)
-          ?(avg_fill_p=0.)
-          ?(last_fill_p=0.)
-          ?(last_fill_qty=0.)
+          ?(filled_qty=Float.max_finite_value)
+          ?(remaining_qty=Float.max_finite_value)
+          ?(avg_fill_p=Float.max_finite_value)
+          ?(last_fill_p=Float.max_finite_value)
+          ?(last_fill_qty=Float.max_finite_value)
           ?(last_fill_ts=0L)
           ?(fill_exec_id="")
           ?(trade_account="")
@@ -1045,6 +1045,8 @@ module Trading = struct
           ?(no_orders=false)
           ?(parent_srv_ord_id="")
           ?(oco_linked_ord_srv_ord_id="")
+          ?(open_or_close=`Unset)
+          ?(previous_client_order_id="")
           cs =
         set_cs_size cs sizeof_cs;
         set_cs__type cs (msg_to_enum OrderUpdate);
@@ -1078,8 +1080,9 @@ module Trading = struct
         set_cs_trade_account (bytes_with_msg trade_account 32) 0 cs;
         set_cs_text (bytes_with_msg text 96) 0 cs;
         set_cs_parent_server_order_id (bytes_with_msg parent_srv_ord_id 32) 0 cs;
-        set_cs_oco_linked_order_server_order_id
-          (bytes_with_msg oco_linked_ord_srv_ord_id 32) 0 cs
+        set_cs_oco_linked_order_server_order_id (bytes_with_msg oco_linked_ord_srv_ord_id 32) 0 cs;
+        set_cs_open_or_close cs Int32.(of_int_exn @@ open_close_trade_to_enum open_or_close);
+        set_cs_previous_client_order_id (bytes_with_msg previous_client_order_id 32) 0 cs
     end
 
     module Open = struct

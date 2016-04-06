@@ -586,6 +586,8 @@ module Trading = struct
         uint8_t no_orders;
         uint8_t parent_server_order_id[32];
         uint8_t oco_linked_order_server_order_id[32];
+        uint32_t open_or_close;
+        uint8_t previous_client_order_id[32];
       } as little_endian
     end
 
