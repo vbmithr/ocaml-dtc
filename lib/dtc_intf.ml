@@ -175,6 +175,7 @@ type order_status =
   | `Filled
   | `Canceled
   | `Rejected
+  | `Partially_filled
   ] [@@deriving show,enum]
 
 type update_reason =
