@@ -498,6 +498,7 @@ module Trading = struct
         uint8_t text[48];
         uint8_t ____padding[3];
         int32_t open_or_close;
+        int8_t partial_fill_handling;
       } as little_endian
     end
 

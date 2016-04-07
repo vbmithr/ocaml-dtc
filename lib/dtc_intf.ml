@@ -272,6 +272,12 @@ type encoding =
   | `Protobuf
   ] [@@deriving show, enum]
 
+type partial_fill =
+  [ `Unset
+  | `Reduce_quantity
+  | `Immediate_cancel
+  ] [@@deriving show, enum]
+
 let price_display_format_of_ticksize = function
   | 1. -> `Decimal_0
   | 1e-1 -> `Decimal_1
@@ -964,6 +970,60 @@ module Trading = struct
           ~good_till_ts:(get_cs_good_till_ts cs)
           ~automated:(get_cs_automated cs |> bool_of_int)
           ~parent:(get_cs_parent cs |> bool_of_int)
+          ~text:(get_cs_text cs |> cstring_of_cstruct)
+          ()
+    end
+
+    module SubmitOCO = struct
+      open Trading.Order.SubmitOCO
+      type t = {
+        trade_account: string;
+        symbol: string;
+        exchange: string;
+        cli_ord_id_1: string;
+        ord_type_1: order_type;
+        buy_sell_1: buy_or_sell;
+        p1_1: float;
+        p2_1: float;
+        qty_1: float;
+        cli_ord_id_2: string;
+        ord_type_2: order_type;
+        buy_sell_2: buy_or_sell;
+        p1_2: float;
+        p2_2: float;
+        qty_2: float;
+        tif: time_in_force;
+        good_till_ts: int64; (* UNIX time in seconds. *)
+        open_close: open_close_trade;
+        partial_fill_handling:partial_fill;
+        automated: bool;
+        parent: string;
+        text: string;
+      } [@@deriving show,create]
+
+      let read cs =
+        create
+          ~trade_account:(get_cs_trade_account cs |> cstring_of_cstruct)
+          ~symbol:(get_cs_symbol cs |> cstring_of_cstruct)
+          ~exchange:(get_cs_exchange cs |> cstring_of_cstruct)
+          ~cli_ord_id_1:(get_cs_order_id_1 cs |> cstring_of_cstruct)
+          ~ord_type_1:Option.(value_exn (get_cs_order_type_1 cs |> Int32.to_int_exn |> order_type_of_enum))
+          ~buy_sell_1:Option.(value_exn (get_cs_buy_sell_1 cs |> Int32.to_int_exn |> buy_or_sell_of_enum))
+          ~p1_1:Int64.(float_of_bits @@ get_cs_price1_1 cs)
+          ~p2_1:Int64.(float_of_bits @@ get_cs_price2_1 cs)
+          ~qty_1:Int64.(float_of_bits @@ get_cs_qty_1 cs)
+          ~cli_ord_id_2:(get_cs_order_id_2 cs |> cstring_of_cstruct)
+          ~ord_type_2:Option.(value_exn (get_cs_order_type_2 cs |> Int32.to_int_exn |> order_type_of_enum))
+          ~buy_sell_2:Option.(value_exn (get_cs_buy_sell_2 cs |> Int32.to_int_exn |> buy_or_sell_of_enum))
+          ~p1_2:Int64.(float_of_bits @@ get_cs_price1_2 cs)
+          ~p2_2:Int64.(float_of_bits @@ get_cs_price2_2 cs)
+          ~qty_2:Int64.(float_of_bits @@ get_cs_qty_2 cs)
+          ~tif:Option.(value_exn (get_cs_tif cs |> Int32.to_int_exn |> time_in_force_of_enum))
+          ~good_till_ts:(get_cs_good_till_ts cs)
+          ~open_close:Option.(value_exn (get_cs_open_or_close cs |> Int32.to_int_exn |> open_close_trade_of_enum))
+          ~partial_fill_handling:Option.(value_exn (get_cs_partial_fill_handling cs |> partial_fill_of_enum))
+          ~automated:(get_cs_automated cs |> bool_of_int)
+          ~parent:(get_cs_parent cs |> cstring_of_cstruct)
           ~text:(get_cs_text cs |> cstring_of_cstruct)
           ()
     end
