@@ -510,10 +510,10 @@ module MarketData = struct
       ask_qty: float [@default 0.];
       last_trade_p: float [@default 0.];
       last_trade_v: float [@default 0.];
-      last_trade_ts: float [@default 0.]
-          [@printer fun fmt -> fprintf fmt "%f"]; (* UNIX ts with ms. *)
-      bid_ask_ts: float [@default 0.]
-          [@printer fun fmt -> fprintf fmt "%f"]; (* UNIX ts with ms. *)
+      last_trade_ts: float [@default 0.]; (* UNIX ts with ms. *)
+      bid_ask_ts: float [@default 0.]; (* UNIX ts with ms. *)
+      session_settlement_ts: int32 [@default 0l] (* UNIX ts in seconds *);
+      trading_session_ts: int32 [@default 0l] (* UNIX ts in seconds *);
     } [@@deriving show,create]
 
     let to_cstruct cs t =

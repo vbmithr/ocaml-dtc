@@ -114,6 +114,8 @@ module MarketData = struct
       uint64_t last_trade_volume;
       uint64_t last_trade_ts;
       uint64_t bid_ask_ts;
+      uint32_t session_settlement_ts;
+      uint32_t trading_session_ts;
     } as little_endian
   end
 
