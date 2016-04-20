@@ -579,7 +579,7 @@ module MarketData = struct
       set_cs_bid_qty cs @@ Int32.bits_of_float bid_qty;
       set_cs_ask_price cs @@ Int64.bits_of_float ask;
       set_cs_ask_qty cs @@ Int32.bits_of_float ask_qty;
-      set_cs_ts cs @@ Int32.of_float ts
+      set_cs_ts cs ts
   end
 
   module UpdateSession = struct
