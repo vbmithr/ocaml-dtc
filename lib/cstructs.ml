@@ -561,12 +561,13 @@ module Trading = struct
           lastfillqty: uint64_t;
           fillexecution_id: uint8_t [@len 64];
           trade_account: uint8_t [@len 32];
-          text: uint8_t [@len 96];
+          info_text: uint8_t [@len 96];
           no_orders: uint8_t;
           parent_server_order_id: uint8_t [@len 32];
           oco_linked_order_server_order_id: uint8_t [@len 32];
           open_or_close: uint32_t;
           previous_client_order_id: uint8_t [@len 32];
+          free_form_text: uint8_t [@len 48];
         } [@@little_endian]]
     end
 
