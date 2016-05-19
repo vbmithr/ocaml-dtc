@@ -1091,7 +1091,7 @@ module Trading = struct
           ?(p2=Float.max_finite_value)
           ?(tif=`Unset)
           ?(good_till_ts=0L)
-          ?(qty=Float.max_finite_value)
+          ?(order_qty=Float.max_finite_value)
           ?(filled_qty=Float.max_finite_value)
           ?(remaining_qty=Float.max_finite_value)
           ?(avg_fill_p=Float.max_finite_value)
@@ -1128,7 +1128,7 @@ module Trading = struct
         set_cs_price2 cs @@ Int64.bits_of_float p2;
         set_cs_tif cs @@ Int32.of_int_exn @@ time_in_force_to_enum tif;
         set_cs_good_till_ts cs good_till_ts;
-        set_cs_order_qty cs @@ Int64.bits_of_float qty;
+        set_cs_order_qty cs @@ Int64.bits_of_float order_qty;
         set_cs_filled_qty cs @@ Int64.bits_of_float filled_qty;
         set_cs_remaining_qty cs @@ Int64.bits_of_float remaining_qty;
         set_cs_avgfillprice cs @@ Int64.bits_of_float avg_fill_p;
