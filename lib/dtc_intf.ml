@@ -1098,7 +1098,7 @@ module Trading = struct
           ?(last_fill_p=Float.max_finite_value)
           ?(last_fill_qty=Float.max_finite_value)
           ?(last_fill_ts=0L)
-          ?(fill_exec_id="")
+          ?(last_fill_exec_id="")
           ?(trade_account="")
           ?(info_text="")
           ?(no_orders=false)
@@ -1136,7 +1136,7 @@ module Trading = struct
         set_cs_lastfillqty cs @@ Int64.bits_of_float last_fill_qty;
         set_cs_lastfilldatetime cs last_fill_ts;
         set_cs_no_orders cs @@ int_of_bool no_orders;
-        set_cs_fillexecution_id (bytes_with_msg fill_exec_id 64) 0 cs;
+        set_cs_lastfillexecution_id (bytes_with_msg last_fill_exec_id 64) 0 cs;
         set_cs_trade_account (bytes_with_msg trade_account 32) 0 cs;
         set_cs_info_text (bytes_with_msg info_text 96) 0 cs;
         set_cs_parent_server_order_id (bytes_with_msg parent_srv_ord_id 32) 0 cs;

@@ -559,7 +559,7 @@ module Trading = struct
           lastfillprice: uint64_t;
           lastfilldatetime: int64_t;
           lastfillqty: uint64_t;
-          fillexecution_id: uint8_t [@len 64];
+          lastfillexecution_id: uint8_t [@len 64];
           trade_account: uint8_t [@len 32];
           info_text: uint8_t [@len 96];
           no_orders: uint8_t;
