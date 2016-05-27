@@ -306,6 +306,9 @@ module SecurityDefinition = struct
         earnings_per_share: uint32_t;
         shares_outstanding: uint32_t;
         qty_divisor: uint32_t;
+        has_market_depth_data: uint8_t;
+        _____padding: uint8_t [@len 3];
+        display_price_multiplier: uint32_t;
       } [@@little_endian]]
   end
 end

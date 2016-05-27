@@ -756,7 +756,7 @@ module SecurityDefinition = struct
       min_price_increment: float;
       price_display_format: price_display_format;
       currency_value_per_increment: float;
-      final: bool [@default true];
+      final: bool [@default false];
       multiplier: float [@default 0.];
       divisor: float [@default 0.];
       underlying_symbol: string [@default ""];
@@ -770,6 +770,8 @@ module SecurityDefinition = struct
       earnings_per_share: float [@default 0.]; (* only for stock *)
       shares_outstanding: int32 [@default 0l]; (* only for stock *)
       qty_divisor: float [@default 0.];
+      has_market_depth_data: bool [@default false];
+      display_price_multiplier: float [@default 0.];
     } [@@deriving show,create]
 
     let to_cstruct cs t =
@@ -799,6 +801,8 @@ module SecurityDefinition = struct
       set_cs_earnings_per_share cs @@ Int32.bits_of_float t.earnings_per_share;
       set_cs_shares_outstanding cs t.shares_outstanding;
       set_cs_qty_divisor cs @@ Int32.bits_of_float t.qty_divisor;
+      set_cs_has_market_depth_data cs @@ int_of_bool t.has_market_depth_data;
+      set_cs_display_price_multiplier cs @@ Int32.bits_of_float t.display_price_multiplier;
   end
 end
 
