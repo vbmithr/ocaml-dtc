@@ -177,6 +177,17 @@ module MarketData = struct
         ___padding: uint32_t;
       } [@@little_endian]]
   end
+
+  module UpdateLastTradeSnapshot = struct
+    [%%cstruct type cs = {
+        size: uint16_t;
+        _type: uint16_t;
+        symbol_id: uint16_t;
+        last_trade_price: uint64_t;
+        last_trade_volume: uint64_t;
+        last_trade_ts: uint64_t;
+      } [@@little_endian]]
+  end
 end
 
 module MarketDepth = struct

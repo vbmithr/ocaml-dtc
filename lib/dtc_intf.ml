@@ -617,6 +617,18 @@ module MarketData = struct
       set_cs_symbol_id cs symbol_id;
       set_cs_open_interest cs open_interest
   end
+
+  module UpdateLastTradeSnapshot = struct
+    include MarketData.UpdateLastTradeSnapshot
+
+    let write cs ~symbol_id ~price ~qty ~ts =
+      set_cs_size cs sizeof_cs;
+      set_cs__type cs (msg_to_enum MarketDataUpdateLastTradeSnapshot);
+      set_cs_symbol_id cs symbol_id;
+      set_cs_last_trade_price cs Int64.(bits_of_float price);
+      set_cs_last_trade_volume cs Int64.(bits_of_float qty);
+      set_cs_last_trade_ts cs Int64.(bits_of_float ts)
+  end
 end
 
 module MarketDepth = struct
