@@ -495,19 +495,19 @@ module MarketData = struct
     include MarketData.Snapshot
     type t = {
       symbol_id: int;
-      session_settlement_price: float [@default 0.] (* vwap *);
-      session_o: float [@default 0.];
-      session_h: float [@default 0.];
-      session_l: float [@default 0.];
-      session_v: float [@default 0.];
-      session_n: int32 [@default 0l];
-      open_interest: int32 [@default 0l];
-      bid: float [@default 0.];
-      ask: float [@default 0.];
-      bid_qty: float [@default 0.];
-      ask_qty: float [@default 0.];
-      last_trade_p: float [@default 0.];
-      last_trade_v: float [@default 0.];
+      session_settlement_price: float [@default Float.max_finite_value] (* vwap *);
+      session_o: float [@default Float.max_finite_value];
+      session_h: float [@default Float.max_finite_value];
+      session_l: float [@default Float.max_finite_value];
+      session_v: float [@default Float.max_finite_value];
+      session_n: int32 [@default 0xffffffffl];
+      open_interest: int32 [@default 0xffffffffl];
+      bid: float [@default Float.max_finite_value];
+      ask: float [@default Float.max_finite_value];
+      bid_qty: float [@default Float.max_finite_value];
+      ask_qty: float [@default Float.max_finite_value];
+      last_trade_p: float [@default Float.max_finite_value];
+      last_trade_v: float [@default Float.max_finite_value];
       last_trade_ts: float [@default 0.]; (* UNIX ts with ms. *)
       bid_ask_ts: float [@default 0.]; (* UNIX ts with ms. *)
       session_settlement_ts: int32 [@default 0l] (* UNIX ts in seconds *);
