@@ -1312,8 +1312,8 @@ module Account = struct
       let write ~msg_number ~nb_msgs ~trade_account ~request_id cs =
         set_cs_size cs sizeof_cs;
         set_cs__type cs @@ msg_to_enum TradeAccountResponse;
-        set_cs_nb_msgs cs nb_msgs;
-        set_cs_msg_number cs msg_number;
+        set_cs_nb_msgs cs (Int32.of_int_exn nb_msgs);
+        set_cs_msg_number cs (Int32.of_int_exn msg_number);
         set_cs_trade_account (bytes_with_msg trade_account Lengths.trade_account) 0 cs;
         set_cs_request_id cs request_id;
     end
