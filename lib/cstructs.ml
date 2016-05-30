@@ -437,6 +437,10 @@ module Account = struct
           trade_account: uint8_t [@len 32];
           securities_value: uint64_t;
           margin_requirement: uint64_t;
+          nb_msgs: uint32_t;
+          msg_number: uint32_t;
+          no_account_balances: uint8_t;
+          unsolicited: uint8_t;
         } [@@little_endian]]
     end
   end

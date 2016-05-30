@@ -1347,13 +1347,18 @@ module Account = struct
 
     module Update = struct
       include Account.Balance.Update
-      let write ?(request_id=0l)
+      let write
+          ?(request_id=0l)
           ?(cash_balance=0.)
           ?(balance_available=0.)
           ?(currency="")
           ?(trade_account="")
           ?(securities_value=0.)
           ?(margin_requirement=0.)
+          ?(nb_msgs=0)
+          ?(msg_number=0)
+          ?(no_account_balance=false)
+          ?(unsolicited=false)
           cs =
         set_cs_size cs sizeof_cs;
         set_cs__type cs @@ msg_to_enum AccountBalanceUpdate;
@@ -1364,6 +1369,10 @@ module Account = struct
         set_cs_trade_account (bytes_with_msg trade_account Lengths.trade_account) 0 cs;
         set_cs_securities_value cs Int64.(bits_of_float securities_value);
         set_cs_margin_requirement cs Int64.(bits_of_float margin_requirement);
+        set_cs_nb_msgs cs (Int32.of_int_exn nb_msgs);
+        set_cs_msg_number cs (Int32.of_int_exn msg_number);
+        set_cs_no_account_balances cs (int_of_bool no_account_balance);
+        set_cs_unsolicited cs (int_of_bool unsolicited)
     end
   end
 end
