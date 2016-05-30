@@ -1355,10 +1355,10 @@ module Account = struct
           ?(trade_account="")
           ?(securities_value=0.)
           ?(margin_requirement=0.)
-          ?(nb_msgs=0)
-          ?(msg_number=0)
+          ~nb_msgs
+          ~msg_number
           ?(no_account_balance=false)
-          ?(unsolicited=false)
+          ~unsolicited
           cs =
         set_cs_size cs sizeof_cs;
         set_cs__type cs @@ msg_to_enum AccountBalanceUpdate;
