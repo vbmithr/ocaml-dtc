@@ -1091,8 +1091,8 @@ module Trading = struct
 
       let write
           ?(request_id=0l)
-          ?(nb_msgs=1l)
-          ?(msg_number=1l)
+          ~nb_msgs
+          ~msg_number
           ?(symbol="")
           ?(exchange="")
           ?(prev_srv_ord_id="")
@@ -1126,8 +1126,8 @@ module Trading = struct
           cs =
         set_cs_size cs sizeof_cs;
         set_cs__type cs (msg_to_enum OrderUpdate);
-        set_cs_nb_msgs cs nb_msgs;
-        set_cs_msg_number cs msg_number;
+        set_cs_nb_msgs cs (Int32.of_int_exn nb_msgs);
+        set_cs_msg_number cs (Int32.of_int_exn msg_number);
         set_cs_request_id cs request_id;
         set_cs_symbol (bytes_with_msg symbol 64) 0 cs;
         set_cs_exchange (bytes_with_msg exchange 16) 0 cs;
@@ -1280,8 +1280,8 @@ module Trading = struct
         set_cs_size cs sizeof_cs;
         set_cs__type cs @@ msg_to_enum PositionUpdate;
         set_cs_request_id cs request_id;
-        set_cs_nb_msgs cs nb_msgs;
-        set_cs_msg_number cs msg_number;
+        set_cs_nb_msgs cs (Int32.of_int_exn nb_msgs);
+        set_cs_msg_number cs (Int32.of_int_exn msg_number);
         set_cs_symbol (bytes_with_msg symbol Lengths.symbol) 0 cs;
         set_cs_exchange (bytes_with_msg exchange Lengths.exchange) 0 cs;
         set_cs_qty cs @@ Int64.bits_of_float v;
