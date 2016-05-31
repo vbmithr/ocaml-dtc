@@ -165,7 +165,7 @@ type request_action =
   ] [@@deriving show,enum]
 
 type order_status =
-  [ `Unspecified
+  [ `Unset
   | `Sent
   | `Pending_open
   | `Pending_child
@@ -184,7 +184,7 @@ type update_reason =
   | `New_order_accepted
   | `General_order_update
   | `Filled
-  | `Filled_partially
+  | `Partially_filled
   | `Canceled
   | `Cancel_replace_complete
   | `New_order_rejected
@@ -1099,7 +1099,7 @@ module Trading = struct
           ?(cli_ord_id="")
           ?(srv_ord_id="")
           ?(xch_ord_id="")
-          ?(status=`Unspecified)
+          ?(status=`Unset)
           ?(reason=`Unset)
           ?(ord_type=`Unset)
           ?(buy_sell=`Unset)
