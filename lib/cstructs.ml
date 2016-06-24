@@ -586,6 +586,7 @@ module Trading = struct
           open_or_close: uint32_t;
           previous_client_order_id: uint8_t [@len 32];
           free_form_text: uint8_t [@len 48];
+          received_ts: int64_t;
         } [@@little_endian]]
     end
 

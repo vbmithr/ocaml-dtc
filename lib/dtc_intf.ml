@@ -1123,6 +1123,7 @@ module Trading = struct
           ?(open_or_close=`Unset)
           ?(previous_client_order_id="")
           ?(free_form_text="")
+          ?(received_ts=0L)
           cs =
         set_cs_size cs sizeof_cs;
         set_cs__type cs (msg_to_enum OrderUpdate);
@@ -1159,7 +1160,8 @@ module Trading = struct
         set_cs_oco_linked_order_server_order_id (bytes_with_msg oco_linked_ord_srv_ord_id 32) 0 cs;
         set_cs_open_or_close cs Int32.(of_int_exn @@ open_close_trade_to_enum open_or_close);
         set_cs_previous_client_order_id (bytes_with_msg previous_client_order_id 32) 0 cs;
-        set_cs_free_form_text (bytes_with_msg info_text 48) 0 cs
+        set_cs_free_form_text (bytes_with_msg info_text 48) 0 cs;
+        set_cs_received_ts cs last_fill_ts
     end
 
     module Open = struct
