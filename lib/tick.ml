@@ -1,7 +1,5 @@
 open Core.Std
 
-type buy_or_sell = [`Unset | `Buy | `Sell] [@@deriving show]
-
 type t =
   < p : int64;
     v : int64;
@@ -14,13 +12,13 @@ let show t =
   Format.sprintf "< ts = %s, p = %f, v = %Ld, d = %s >"
     Time_ns.(of_int63_ns_since_epoch Int63.(of_int64_exn t#ts) |> to_string_fix_proto `Utc)
     Int64.(to_float t#p /. 1e8)
-    t#v (show_buy_or_sell (t#side :> [`Unset | `Buy | `Sell]))
+    t#v (Dtc.show_buy_or_sell (t#side :> [`Unset | `Buy | `Sell]))
 
 let pp fmt t =
   Format.fprintf fmt "< ts = %s, p = %f, v = %Ld, d = %s >"
     Time_ns.(of_int63_ns_since_epoch Int63.(of_int64_exn t#ts) |> to_string_fix_proto `Utc)
     Int64.(to_float t#p /. 1e8)
-    t#v (show_buy_or_sell (t#side :> [`Unset | `Buy | `Sell]))
+    t#v (Dtc.show_buy_or_sell (t#side :> [`Unset | `Buy | `Sell]))
 
 let int64_of_v_side v side =
   let side_int64 = match side with `Buy -> 1L | `Sell -> 2L in
