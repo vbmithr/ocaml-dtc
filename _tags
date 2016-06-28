@@ -3,15 +3,10 @@ true: debug, bin_annot
 <lib>: include
 <src>: include
 
-<lib/*.*>: package(core), \
-	   package(async), \
-	   package(cstruct.ppx), \
-           package(ppx_deriving.std), \
-           package(scid), \
-           package(leveldb), \
-           thread
-
-<src/*.*>: package(core), \
-	   package(leveldb), \
-	   package(scid), \
-	   thread
+<*/*>: package(core), \
+       package(async), \
+       package(cstruct.ppx), \
+       package(ppx_deriving.std), \
+       package(scid), \
+       package(leveldb), \
+       thread
