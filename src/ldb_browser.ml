@@ -9,7 +9,7 @@ let main tail max_ticks dbpath () =
     f (fun ts data ->
         String.blit ts 0 buf 0 8;
         String.blit data 0 buf 8 16;
-        let tick = Tick.IO.Bytes.read_tdts buf 0 in
+        let tick = Tick.Bytes.read buf in
         Format.(fprintf std_formatter "%d %a@." !nb_read Sexp.pp @@ Tick.sexp_of_t tick);
         incr nb_read;
         Option.value_map max_ticks

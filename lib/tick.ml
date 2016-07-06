@@ -43,15 +43,21 @@ end
 module TickIO (IO: IO) = struct
   open IO
 
-  let write_tdts b off { p; v; side; ts } =
-    set_int64_be b off @@ Int63.to_int64 @@ Time_ns.to_int63_ns_since_epoch ts;
-    set_int64_le b (off+8) @@ Int63.to_int64 p;
-    set_int64_le b (off+16) @@ int64_of_v_side v side
+  let write b ?(pos=0) { p; v; side; ts } =
+    set_int64_be b pos @@ Int63.to_int64 @@ Time_ns.to_int63_ns_since_epoch ts;
+    set_int64_le b (pos+8) @@ Int63.to_int64 p;
+    set_int64_le b (pos+16) @@ int64_of_v_side v side
 
-  let read_tdts b off =
-    let ts = get_int64_be b off |> Int63.of_int64_exn |> Time_ns.of_int63_ns_since_epoch in
-    let p = Int63.of_int64_exn @@ get_int64_le b (off+8) in
-    let v = get_int64_le b (off+16) in
+  let read ?(pos=0) b =
+    let ts = get_int64_be b pos |> Int63.of_int64_exn |> Time_ns.of_int63_ns_since_epoch in
+    let p = Int63.of_int64_exn @@ get_int64_le b (pos+8) in
+    let v = get_int64_le b (pos+16) in
+    let v, side = v_side_of_int64 v in
+    create ~ts ~p ~v ~side ()
+
+  let read' ?(pos=0) ~ts ~data () =
+    let p = Int63.of_int64_exn @@ get_int64_le data pos in
+    let v = get_int64_le data (pos+8) in
     let v, side = v_side_of_int64 v in
     create ~ts ~p ~v ~side ()
 end
@@ -72,10 +78,10 @@ module BigstringIO = struct
   let set_int64_le buf pos = unsafe_set_int64_t_le buf ~pos
 end
 
-module IO = struct
-  module Bytes = TickIO(BytesIO)
-  module Bigstring = TickIO(BigstringIO)
-end
+module B = Bytes
+
+module Bytes = TickIO(BytesIO)
+module Bigstring = TickIO(BigstringIO)
 
 let hdr_size = 16
 let size = 24
@@ -98,7 +104,6 @@ let of_scid_record r =
     ~side:(if r.Scid.R.bid_volume = 0L then `Buy else `Sell) ()
 
 module LevelDB_ext = struct
-  open LevelDB
   let length db =
     let cnt = ref 0 in
     LevelDB.iter (fun _ _ -> incr cnt; true) db;
@@ -117,39 +122,39 @@ module LevelDB_ext = struct
           String.blit k 0 max_elt 0 8;
           String.blit v 0 min_elt 8 16;
           false) db;
-      Some (IO.Bytes.read_tdts min_elt 0,
-            IO.Bytes.read_tdts max_elt 0)
+      Some (Bytes.read min_elt,
+            Bytes.read max_elt)
 
   let mem_tick db t =
-    let buf = Bytes.create 8 in
+    let buf = B.create 8 in
     Binary_packing.pack_signed_64_big_endian buf 0 (Time_ns.to_int63_ns_since_epoch t.ts |> Int63.to_int64);
-    mem db buf
+    LevelDB.mem db buf
 
   let put_tick db t =
-    let buf = Bytes.create size in
-    IO.Bytes.write_tdts buf 0 t;
-    put db (String.sub buf 0 8) (String.sub buf 8 16)
+    let buf = B.create size in
+    Bytes.write buf t;
+    LevelDB.put db (String.sub buf 0 8) (String.sub buf 8 16)
 
   let get_tick db ts =
-    let open Option in
+    let open Option.Monad_infix in
     let buf = String.create size in
     Binary_packing.pack_signed_64_big_endian buf 0 ts;
-    get db (String.sub buf 0 8) >>| fun v ->
+    LevelDB.get db (String.sub buf 0 8) >>| fun v ->
     String.blit v 0 buf 8 16;
-    IO.Bytes.read_tdts buf 0
+    Bytes.read buf
 end
 
 module File = struct
   let of_scid ic oc =
     let open Scid in
-    let buf = Bytes.create size in
+    let buf = B.create size in
     let d = D.make @@ `Channel ic in
     let rec loop nb_records =
       match D.decode d
       with
       | `R r ->
         let t = of_scid_record r in
-        IO.Bytes.write_tdts buf 0 t;
+        Bytes.write buf t;
         output oc buf 0 size;
         loop (succ nb_records)
       | `End -> Ok nb_records
@@ -160,7 +165,7 @@ module File = struct
     loop 0
 
   let bounds ic =
-    let buf = Bytes.create size in
+    let buf = B.create size in
     let nb_read = In_channel.input ic ~buf ~pos:0 ~len:hdr_size in
     if nb_read <> hdr_size || String.sub buf 0 hdr_size <> hdr
     then Error (Invalid_argument
@@ -168,10 +173,10 @@ module File = struct
                      (String.sub buf 0 nb_read)))
     else
       let nb_read_fst = In_channel.input ic ~buf ~pos:0 ~len:size in
-      let min_elt = IO.Bytes.read_tdts buf 0 in
+      let min_elt = Bytes.read buf in
       In_channel.(Int64.(seek ic @@ length ic - of_int size));
       let nb_read_snd = In_channel.input ic ~buf ~pos:0 ~len:size in
-      let max_elt = IO.Bytes.read_tdts buf 0 in
+      let max_elt = Bytes.read buf in
       if nb_read_fst + nb_read_snd <> 2 * size
       then Error End_of_file
       else (In_channel.seek ic 0L; Result.return (min_elt, max_elt))
@@ -194,7 +199,7 @@ module File = struct
   let to_leveldb ic db =
     let open Result in
     bounds ic >>= fun (min_elt, max_elt) ->
-    let buf = Bytes.create size in
+    let buf = B.create size in
     let cnt = Int64.((In_channel.length ic - of_int hdr_size) / (of_int size) |> to_int_exn) in
     if cnt = 0 then Ok (0, None)
     else begin
@@ -208,14 +213,14 @@ module File = struct
 
   let leveldb_of_scid db ic =
     let open Scid in
-    let buf = Bytes.create size in
+    let buf = B.create size in
     let d = D.make @@ `Channel ic in
     let rec loop nb_records =
       match D.decode d
       with
       | `R r ->
         let t = of_scid_record r in
-        IO.Bytes.write_tdts buf 0 t;
+        Bytes.write buf t;
         LevelDB.put db (String.sub buf 0 8) (String.sub buf 8 16);
         loop (succ nb_records)
       | `End -> Ok nb_records

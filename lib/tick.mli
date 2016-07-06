@@ -7,16 +7,16 @@ type t = {
   ts: Time_ns.t
 } [@@deriving create,sexp]
 
-module IO : sig
-  module Bytes : sig
-    val write_tdts : Bytes.t -> int -> t -> unit
-    val read_tdts : Bytes.t -> int -> t
-  end
+module Bytes : sig
+  val write : Bytes.t -> ?pos:int -> t -> unit
+  val read : ?pos:int -> Bytes.t -> t
+  val read' : ?pos:int -> ts:Time_ns.t -> data:Bytes.t -> unit -> t
+end
 
-  module Bigstring : sig
-    val write_tdts : Bigstring.t -> int -> t -> unit
-    val read_tdts : Bigstring.t -> int -> t
-  end
+module Bigstring : sig
+  val write : Bigstring.t -> ?pos:int -> t -> unit
+  val read : ?pos:int -> Bigstring.t -> t
+  val read' : ?pos:int -> ts:Time_ns.t -> data:Bigstring.t -> unit -> t
 end
 
 val hdr : string
