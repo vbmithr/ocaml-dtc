@@ -1,22 +1,22 @@
 open Core.Std
 
 let main tail max_ticks dbpath () =
-  let buf = Bytes.create 24 in
   let nb_read = ref 0 in
-  let f = if tail then LevelDB.rev_iter else LevelDB.iter in
+  let iter_f = if tail then LevelDB.rev_iter else LevelDB.iter in
   let db = LevelDB.open_db dbpath in
-  try
-    f (fun ts data ->
-        String.blit ts 0 buf 0 8;
-        String.blit data 0 buf 8 16;
-        let tick = Tick.Bytes.read buf in
+  Exn.protectx
+    ~finally:LevelDB.close
+    ~f:(iter_f (fun ts data ->
+        let ts = Time_ns.of_int_ns_since_epoch @@
+          Binary_packing.unpack_signed_64_int_big_endian ~buf:ts ~pos:0
+        in
+        let tick = Tick.Bytes.read' ~ts ~data () in
         Format.(fprintf std_formatter "%d %a@." !nb_read Sexp.pp @@ Tick.sexp_of_t tick);
         incr nb_read;
         Option.value_map max_ticks
           ~default:true ~f:(fun max_ticks -> not (!nb_read = max_ticks))
-      ) db;
-    LevelDB.close db
-  with _ -> LevelDB.close db
+      ))
+    db
 
 let command =
   let spec =
@@ -29,5 +29,3 @@ let command =
   Command.basic ~summary:"Browser for tick files" spec main
 
 let () = Command.run command
-
-
