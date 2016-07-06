@@ -227,7 +227,7 @@ type buy_or_sell =
   [ `Unset
   | `Buy
   | `Sell
-  ] [@@deriving show,enum]
+  ] [@@deriving show,enum,sexp]
 
 type open_close_trade =
   [ `Unset

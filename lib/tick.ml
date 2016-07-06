@@ -1,37 +1,34 @@
 open Core.Std
 
-type t =
-  < p : int64;
-    v : int64;
-    side : [`Buy | `Sell];
-    ts : int64
-  >
+type t = {
+  p: Int63.t;
+  v: Int63.t;
+  side: Dtc.buy_or_sell;
+  ts: Time_ns.t
+} [@@deriving create,sexp]
 
 let compare t t' = compare t#p t'#p
-let show t =
-  Format.sprintf "< ts = %s, p = %f, v = %Ld, d = %s >"
-    Time_ns.(of_int63_ns_since_epoch Int63.(of_int64_exn t#ts) |> to_string_fix_proto `Utc)
-    Int64.(to_float t#p /. 1e8)
-    t#v (Dtc.show_buy_or_sell (t#side :> [`Unset | `Buy | `Sell]))
 
-let pp fmt t =
-  Format.fprintf fmt "< ts = %s, p = %f, v = %Ld, d = %s >"
-    Time_ns.(of_int63_ns_since_epoch Int63.(of_int64_exn t#ts) |> to_string_fix_proto `Utc)
-    Int64.(to_float t#p /. 1e8)
-    t#v (Dtc.show_buy_or_sell (t#side :> [`Unset | `Buy | `Sell]))
+let side_of_int64 = function
+  | 0L -> `Unset
+  | 1L -> `Buy
+  | 2L -> `Sell
+  | _ -> invalid_arg "side_of_int64"
+
+let int64_of_side = function `Unset -> 0L | `Buy -> 1L | `Sell -> 2L
 
 let int64_of_v_side v side =
-  let side_int64 = match side with `Buy -> 1L | `Sell -> 2L in
   let open Int64 in
-  bit_or (bit_and v (shift_left 1L 62 - 1L)) (shift_left side_int64 62)
+  let side_i = int64_of_side side in
+  let v = Int63.to_int64 v in
+  bit_or (bit_and v (shift_left one 62 - one)) (shift_left side_i 62)
 
 let v_side_of_int64 i =
   try
     let open Int64 in
-    let side = match shift_right_logical i 62 with
-      | 1L -> `Buy | 2L -> `Sell | _ -> assert false in
+    let side = side_of_int64 @@ shift_right_logical i 62 in
     let v = bit_and i (shift_left 1L 62 - 1L) in
-    v, side
+    Int63.of_int64_exn v, side
   with _ -> invalid_arg @@ Printf.sprintf "%Lx\n%!" i
 
 module type IO = sig
@@ -46,22 +43,17 @@ end
 module TickIO (IO: IO) = struct
   open IO
 
-  let write_tdts b off o =
-    set_int64_be b off o#ts;
-    set_int64_le b (off+8) o#p;
-    set_int64_le b (off+16) @@ int64_of_v_side o#v o#side
+  let write_tdts b off { p; v; side; ts } =
+    set_int64_be b off @@ Int63.to_int64 @@ Time_ns.to_int63_ns_since_epoch ts;
+    set_int64_le b (off+8) @@ Int63.to_int64 p;
+    set_int64_le b (off+16) @@ int64_of_v_side v side
 
   let read_tdts b off =
-    let ts = get_int64_be b off in
-    let p = get_int64_le b (off+8) in
+    let ts = get_int64_be b off |> Int63.of_int64_exn |> Time_ns.of_int63_ns_since_epoch in
+    let p = Int63.of_int64_exn @@ get_int64_le b (off+8) in
     let v = get_int64_le b (off+16) in
     let v, side = v_side_of_int64 v in
-    object
-      method ts = ts
-      method p = p
-      method v = v
-      method side = side
-    end
+    create ~ts ~p ~v ~side ()
 end
 
 module BytesIO = struct
@@ -99,12 +91,11 @@ let hdr =
 
 let of_scid_record r =
   let ts = (r.Scid.R.datetime -. 25569.) *.  86400. *. 1e9 in (* unix ts in nanoseconds *)
-  object
-    method ts = Int64.of_float ts
-    method p = Int64.of_float @@ r.Scid.R.c *. 1e8
-    method v = Int64.(of_int64_exn r.Scid.R.total_volume * 10_000L)
-    method side = if r.Scid.R.bid_volume = 0L then `Buy else `Sell
-  end
+  create
+    ~ts:(ts |> Int63.of_float |> Time_ns.of_int63_ns_since_epoch)
+    ~p:(Int63.of_float @@ r.Scid.R.c *. 1e8)
+    ~v:(Int63.(of_int64_exn r.Scid.R.total_volume * of_int 10_000))
+    ~side:(if r.Scid.R.bid_volume = 0L then `Buy else `Sell) ()
 
 module LevelDB_ext = struct
   open LevelDB
@@ -131,7 +122,7 @@ module LevelDB_ext = struct
 
   let mem_tick db t =
     let buf = Bytes.create 8 in
-    Binary_packing.pack_signed_64_big_endian buf 0 t#ts;
+    Binary_packing.pack_signed_64_big_endian buf 0 (Time_ns.to_int63_ns_since_epoch t.ts |> Int63.to_int64);
     mem db buf
 
   let put_tick db t =

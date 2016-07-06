@@ -9,4 +9,5 @@ true: debug, bin_annot
        package(ppx_deriving.std), \
        package(scid), \
        package(leveldb), \
+       package(ppx_sexp_conv), \
        thread

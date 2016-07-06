@@ -1,16 +1,11 @@
-(** Module defining the tick type as used by Bitsouk. *)
-
 open Core.Std
 
-type t =
-  < p : int64;
-    v : int64;
-    side : [`Buy | `Sell];
-    ts : int64
-  > [@@deriving show,ord]
-
-val int64_of_v_side : int64 -> [ `Buy | `Sell ] -> int64
-val v_side_of_int64 : int64 -> int64 * [ `Buy | `Sell ]
+type t = {
+  p: Int63.t;
+  v: Int63.t;
+  side: Dtc.buy_or_sell;
+  ts: Time_ns.t
+} [@@deriving create,sexp]
 
 module IO : sig
   module Bytes : sig
