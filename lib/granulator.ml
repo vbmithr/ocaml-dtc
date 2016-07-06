@@ -1,5 +1,5 @@
 open Core.Std
-open Dtc.HistoricalPriceData.Record
+open Dtc_intf.HistoricalPriceData.Record
 
 let write_cstruct w cs =
   let open Cstruct in
@@ -26,7 +26,7 @@ class granulator ~request_id ~record_interval ~writer =
       to_cstruct buf record;
       write_cstruct writer buf;
       nb_streamed, nb_processed
-    method add_tick ts p v (d : Dtc.buy_or_sell) =
+    method add_tick ts p v (d : Dtc_intf.buy_or_sell) =
       let ts = Time_ns.to_int63_ns_since_epoch ts |> Int63.to_int64 in
       nb_processed <- succ nb_processed;
       if record.num_trades = 0l then

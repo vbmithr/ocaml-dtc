@@ -3,7 +3,7 @@ open Core.Std
 type t = {
   p: Int63.t;
   v: Int63.t;
-  side: Dtc.buy_or_sell;
+  side: Dtc_intf.buy_or_sell;
   ts: Time_ns.t
 } [@@deriving create,sexp]
 
