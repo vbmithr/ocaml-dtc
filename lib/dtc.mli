@@ -50,8 +50,9 @@ module Tick : sig
 
     (** Conversion from/to the SCID file format. *)
 
-    val of_scid : in_channel -> out_channel -> (int, string) Result.t
-    val leveldb_of_scid : LevelDB.db -> in_channel -> (int, string) Result.t
+    val of_scid : in_channel -> out_channel -> int
+
+    val leveldb_of_scid : ?offset:Time_ns.t -> LevelDB.db -> string -> int
 
     (** Conversion of tick files from and to LevelDB. *)
 

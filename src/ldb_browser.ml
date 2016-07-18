@@ -1,6 +1,6 @@
 open Core.Std
 
-let main tail max_ticks dbpath () =
+let show tail max_ticks dbpath () =
   let nb_read = ref 0 in
   let iter_f = if tail then LevelDB.rev_iter else LevelDB.iter in
   let db = LevelDB.open_db dbpath in
@@ -18,7 +18,21 @@ let main tail max_ticks dbpath () =
       ))
     db
 
-let command =
+let create offset scid db () =
+  let db = LevelDB.open_db db in
+  let offset = Option.map offset ~f:(fun days ->
+      Time_ns.(sub (now ()) @@ Span.of_day (Float.of_int days))
+    )
+  in
+  let nb_records =
+    Exn.protectx
+      ~finally:LevelDB.close
+      ~f:(fun db -> Tick.File.leveldb_of_scid ?offset db scid)
+      db
+  in
+  Printf.printf "%d record written.\n" nb_records
+
+let show =
   let spec =
     let open Command.Spec in
     empty
@@ -26,6 +40,22 @@ let command =
     +> flag "-n" (optional int) ~doc:"n Number of ticks to display (default: all)"
     +> anon ("db" %: string)
   in
-  Command.basic ~summary:"Browser for tick files" spec main
+  Command.basic ~summary:"Show LevelDB tick databases" spec show
+
+let create =
+  let spec =
+    let open Command.Spec in
+    empty
+    +> flag "-offset" (optional int) ~doc:"n number of days in the past"
+    +> anon ("scid" %: string)
+    +> anon ("db" %: string)
+  in
+  Command.basic ~summary:"Create LevelDB tick dbs from scid files" spec create
+
+let command =
+  Command.group ~summary:"Manipulate LevelDB tick databases"
+    ["show", show;
+     "create", create
+    ]
 
 let () = Command.run command

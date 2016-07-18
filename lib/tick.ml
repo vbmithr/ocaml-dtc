@@ -149,17 +149,15 @@ module File = struct
     let open Scid in
     let buf = B.create size in
     let d = D.make @@ `Channel ic in
-    let rec loop nb_records =
-      match D.decode d
-      with
+    let rec loop nb_records = match D.decode d with
       | `R r ->
         let t = of_scid_record r in
         Bytes.write buf t;
         output oc buf 0 size;
         loop (succ nb_records)
-      | `End -> Ok nb_records
-      | `Error e -> Error (D.show_e e)
-      | `Await -> Error "`Await"
+      | `End -> nb_records
+      | `Error e -> failwith (D.show_e e)
+      | `Await -> failwith "`Await"
     in
     output_bytes oc hdr;
     loop 0
@@ -201,7 +199,8 @@ module File = struct
     bounds ic >>= fun (min_elt, max_elt) ->
     let buf = B.create size in
     let cnt = Int64.((In_channel.length ic - of_int hdr_size) / (of_int size) |> to_int_exn) in
-    if cnt = 0 then Ok (0, None)
+    if cnt = 0 then
+      Ok (0, None)
     else begin
       In_channel.seek ic 16L;
       let rec loop () =
@@ -211,21 +210,24 @@ module File = struct
       in loop ()
     end
 
-  let leveldb_of_scid db ic =
+  let leveldb_of_scid ?(offset=Time_ns.epoch) db fn =
     let open Scid in
     let buf = B.create size in
-    let d = D.make @@ `Channel ic in
-    let rec loop nb_records =
-      match D.decode d
-      with
-      | `R r ->
-        let t = of_scid_record r in
-        Bytes.write buf t;
-        LevelDB.put db (String.sub buf 0 8) (String.sub buf 8 16);
-        loop (succ nb_records)
-      | `End -> Ok nb_records
-      | `Error e -> Error (D.show_e e)
-      | `Await -> Error "`Await"
-    in
-    loop 0
+    In_channel.with_file ~binary:true fn ~f:(fun ic ->
+        let d = D.make @@ `Channel ic in
+        let rec loop nb_records = match D.decode d with
+          | `R r ->
+            let t = of_scid_record r in
+            if Time_ns.(t.ts > offset) then begin
+              Bytes.write buf t;
+              LevelDB.put db (String.sub buf 0 8) (String.sub buf 8 16);
+              loop @@ succ nb_records
+            end
+            else loop nb_records
+          | `End -> nb_records
+          | `Error e -> failwith @@ D.show_e e
+          | `Await -> failwith "`Await"
+        in
+        loop 0
+      )
 end
