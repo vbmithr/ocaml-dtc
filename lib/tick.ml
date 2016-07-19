@@ -153,13 +153,13 @@ module File = struct
       | `R r ->
         let t = of_scid_record r in
         Bytes.write buf t;
-        output oc buf 0 size;
+        Out_channel.output oc buf 0 size;
         loop (succ nb_records)
       | `End -> nb_records
       | `Error e -> failwith (D.show_e e)
       | `Await -> failwith "`Await"
     in
-    output_bytes oc hdr;
+    Out_channel.output_string oc hdr;
     loop 0
 
   let bounds ic =

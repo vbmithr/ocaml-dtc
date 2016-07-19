@@ -43,23 +43,23 @@ module Tick : sig
 
     (** Convenience functions *)
 
-    val bounds : in_channel -> (t * t, exn) Result.t
+    val bounds : In_channel.t -> (t * t, exn) Result.t
     (** [bounds ic] is the first and the last tick found in [ic], if
-        any. If there is no error, [in_channel] will be positioned at
+        any. If there is no error, [In_channel.t] will be positioned at
         the beginning of the file. *)
 
     (** Conversion from/to the SCID file format. *)
 
-    val of_scid : in_channel -> out_channel -> int
+    val of_scid : In_channel.t -> Out_channel.t -> int
 
     val leveldb_of_scid : ?offset:Time_ns.t -> LevelDB.db -> string -> int
 
     (** Conversion of tick files from and to LevelDB. *)
 
-    val to_leveldb : in_channel -> LevelDB.db -> (int * (t * t) option, exn) Result.t
+    val to_leveldb : In_channel.t -> LevelDB.db -> (int * (t * t) option, exn) Result.t
 
     val of_leveldb : ?start_ts:int64 -> ?end_ts:int64 -> LevelDB.db ->
-      out_channel -> (int * (t * t) option, exn) Result.t
+      Out_channel.t -> (int * (t * t) option, exn) Result.t
   end
 end
 
