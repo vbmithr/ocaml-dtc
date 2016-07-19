@@ -34,7 +34,7 @@ module Tick : sig
     val length : db -> int
     val bounds : db -> (t * t) option
     val mem_tick : db -> t -> bool
-    val put_tick : db -> t -> unit
+    val put_tick : ?sync:bool -> db -> t -> unit
     val get_tick : db -> int64 -> t option
   end
 

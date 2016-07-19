@@ -130,10 +130,10 @@ module LevelDB_ext = struct
     Binary_packing.pack_signed_64_big_endian buf 0 (Time_ns.to_int63_ns_since_epoch t.ts |> Int63.to_int64);
     LevelDB.mem db buf
 
-  let put_tick db t =
+  let put_tick ?sync db t =
     let buf = B.create size in
     Bytes.write buf t;
-    LevelDB.put db (String.sub buf 0 8) (String.sub buf 8 16)
+    LevelDB.put ?sync db (String.sub buf 0 8) (String.sub buf 8 16)
 
   let get_tick db ts =
     let open Option.Monad_infix in
