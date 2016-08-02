@@ -15,7 +15,6 @@ build: [
 depends: [
   "ocamlfind" {build}
   "core"
-  "async"
   "scid"
   "cstruct"
   "leveldb"
