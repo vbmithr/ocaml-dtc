@@ -354,7 +354,7 @@ module Logon = struct
       integer_1: int32;
       integer_2: int32;
       heartbeat_interval: int32;
-      trade_mode: TradeMode.t;
+      trade_mode: TradeMode.t option;
       trade_account: string;
       hardware_id: string;
       client_name: string;
@@ -369,8 +369,7 @@ module Logon = struct
         ~integer_1:(get_cs_integer_1 cs)
         ~integer_2:(get_cs_integer_2 cs)
         ~heartbeat_interval:(get_cs_heartbeat_interval cs)
-        ~trade_mode:(Option.value_exn
-            (get_cs_trade_mode cs |> Int32.to_int_exn |> TradeMode.of_enum))
+        ?trade_mode:(get_cs_trade_mode cs |> Int32.to_int_exn |> TradeMode.of_enum)
         ~trade_account:(get_cs_trade_account cs |> cstring_of_cstruct)
         ~hardware_id:(get_cs_hardware_indentifier cs |> cstring_of_cstruct)
         ~client_name:(get_cs_client_name cs |> cstring_of_cstruct) ()
@@ -468,11 +467,11 @@ module MarketData = struct
     } [@@deriving show,create]
 
     let read cs =
+      let action = Option.value_exn ~message:"RequestAction.of_enum"
+          (get_cs_action cs |> Int32.to_int_exn |> RequestAction.of_enum)
+      in
       create
-        ~action:(Option.value_exn
-                   (get_cs_action cs
-                    |> Int32.to_int_exn |> RequestAction.of_enum)
-                )
+        ~action
         ~symbol_id:(get_cs_symbol_id cs)
         ~symbol:(get_cs_symbol cs |> cstring_of_cstruct)
         ~exchange:(get_cs_exchange cs |> cstring_of_cstruct) ()
@@ -537,7 +536,7 @@ module MarketData = struct
     include MarketData.UpdateTrade
     type t = {
       symbol_id: int;
-      side: bid_or_ask;
+      side: bid_or_ask option;
       p: float;
       v: float;
       ts: float;
@@ -547,18 +546,18 @@ module MarketData = struct
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum MarketDataUpdateTrade);
       set_cs_symbol_id cs t.symbol_id;
-      set_cs_at_bid_or_ask cs @@ bid_or_ask_to_enum t.side;
+      set_cs_at_bid_or_ask cs @@ option_to_enum bid_or_ask_to_enum t.side;
       set_cs_p cs @@ Int64.bits_of_float t.p;
       set_cs_v cs @@ Int64.bits_of_float t.v;
       set_cs_ts cs @@ Int64.bits_of_float t.ts
 
     let update_cstruct ~symbol_id cs = set_cs_symbol_id cs symbol_id
 
-    let write ~symbol_id ~side ~p ~v ~ts cs =
+    let write ~symbol_id ?side ~p ~v ~ts cs =
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum MarketDataUpdateTrade);
       set_cs_symbol_id cs symbol_id;
-      set_cs_at_bid_or_ask cs @@ bid_or_ask_to_enum side;
+      set_cs_at_bid_or_ask cs @@ option_to_enum bid_or_ask_to_enum side;
       set_cs_p cs @@ Int64.bits_of_float p;
       set_cs_v cs @@ Int64.bits_of_float v;
       set_cs_ts cs @@ Int64.bits_of_float ts
@@ -640,11 +639,11 @@ module MarketDepth = struct
       nb_levels: int;
     } [@@deriving show,create]
 
-    let read cs = create
-        ~action:(Option.value_exn
-                   (get_cs_action cs
-                    |> Int32.to_int_exn |> RequestAction.of_enum)
-                )
+    let read cs =
+      let action = Option.value_exn ~message:"MarketDepth.RequestAction.of_enum"
+          (get_cs_action cs |> Int32.to_int_exn |> RequestAction.of_enum) in
+      create
+        ~action
         ~symbol_id:(get_cs_symbol_id cs)
         ~symbol:(get_cs_symbol cs |> cstring_of_cstruct)
         ~exchange:(get_cs_exchange cs |> cstring_of_cstruct)
@@ -666,7 +665,7 @@ module MarketDepth = struct
     include MarketDepth.Snapshot
     type t = {
       symbol_id: int;
-      side: bid_or_ask;
+      side: bid_or_ask option;
       p: float;
       v: float;
       level: int;
@@ -678,18 +677,18 @@ module MarketDepth = struct
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum MarketDepthSnapshotLevel);
       set_cs_symbol_id cs t.symbol_id;
-      set_cs_side cs (t.side |> bid_or_ask_to_enum);
+      set_cs_side cs (option_to_enum bid_or_ask_to_enum t.side);
       set_cs_p cs (Int64.bits_of_float t.p);
       set_cs_v cs (Int64.bits_of_float t.v);
       set_cs_level cs t.level;
       set_cs_first cs (int_of_bool t.first);
       set_cs_last cs (int_of_bool t.last)
 
-    let write ~symbol_id ~side ~p ~v ~lvl ~first ~last cs =
+    let write ~symbol_id ?side ~p ~v ~lvl ~first ~last cs =
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum MarketDepthSnapshotLevel);
       set_cs_symbol_id cs symbol_id;
-      set_cs_side cs (side |> bid_or_ask_to_enum);
+      set_cs_side cs (option_to_enum bid_or_ask_to_enum side);
       set_cs_p cs (Int64.bits_of_float p);
       set_cs_v cs (Int64.bits_of_float v);
       set_cs_level cs lvl;
@@ -928,12 +927,12 @@ module HistoricalPriceData = struct
 
   module Tick = struct
     include HistoricalPriceData.Tick
-    let write ?(final=false) ~request_id ~ts ~p ~v ~side cs =
+    let write ?(final=false) ~request_id ~ts ~p ~v ?side cs =
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum HistoricalPriceDataTickRecordResponse);
       set_cs_request_id cs request_id;
       set_cs_timestamp cs (Int64.bits_of_float @@ Int64.to_float ts /. 1e9);
-      set_cs_side cs (bid_or_ask_to_enum side);
+      set_cs_side cs (option_to_enum bid_or_ask_to_enum side);
       set_cs_price cs @@ Int64.bits_of_float p;
       set_cs_volume cs @@ Int64.bits_of_float v;
       set_cs_final cs (int_of_bool final)
@@ -949,13 +948,13 @@ module Trading = struct
         symbol: string;
         exchange: string;
         cli_ord_id: string;
-        ord_type: OrderType.t;
-        buy_sell: buy_or_sell;
-        open_close: open_or_close;
+        ord_type: OrderType.t option;
+        buy_sell: buy_or_sell option;
+        open_close: open_or_close option;
         p1: float;
         p2: float;
         qty: float;
-        tif: TimeInForce.t;
+        tif: TimeInForce.t option;
         good_till_ts: int64; (* UNIX time in seconds. *)
         automated: bool;
         parent: bool;
@@ -968,17 +967,13 @@ module Trading = struct
           ~symbol:(get_cs_symbol cs |> cstring_of_cstruct)
           ~exchange:(get_cs_exchange cs |> cstring_of_cstruct)
           ~cli_ord_id:(get_cs_order_id cs |> cstring_of_cstruct)
-          ~ord_type:Option.(value_exn (get_cs_order_type cs |> Int32.to_int_exn |>
-                                       OrderType.of_enum))
-          ~buy_sell:Option.(value_exn (get_cs_buy_sell cs |> Int32.to_int_exn |>
-                                       buy_or_sell_of_enum))
-          ~open_close:Option.(value_exn (get_cs_open_or_close cs |> Int32.to_int_exn |>
-                                         open_or_close_of_enum))
+          ?ord_type:(get_cs_order_type cs |> Int32.to_int_exn |> OrderType.of_enum)
+          ?buy_sell:(get_cs_buy_sell cs |> Int32.to_int_exn |> buy_or_sell_of_enum)
+          ?open_close:(get_cs_open_or_close cs |> Int32.to_int_exn |> open_or_close_of_enum)
           ~p1:Int64.(float_of_bits @@ get_cs_price1 cs)
           ~p2:Int64.(float_of_bits @@ get_cs_price2 cs)
           ~qty:Int64.(float_of_bits @@ get_cs_qty cs)
-          ~tif:Option.(value_exn (get_cs_tif cs |> Int32.to_int_exn |>
-                                  TimeInForce.of_enum))
+          ?tif:(get_cs_tif cs |> Int32.to_int_exn |> TimeInForce.of_enum)
           ~good_till_ts:(get_cs_good_till_ts cs)
           ~automated:(get_cs_automated cs |> bool_of_int)
           ~parent:(get_cs_parent cs |> bool_of_int)
@@ -993,21 +988,21 @@ module Trading = struct
         symbol: string;
         exchange: string;
         cli_ord_id_1: string;
-        ord_type_1: OrderType.t;
-        buy_sell_1: buy_or_sell;
+        ord_type_1: OrderType.t option;
+        buy_sell_1: buy_or_sell option;
         p1_1: float;
         p2_1: float;
         qty_1: float;
         cli_ord_id_2: string;
-        ord_type_2: OrderType.t;
-        buy_sell_2: buy_or_sell;
+        ord_type_2: OrderType.t option;
+        buy_sell_2: buy_or_sell option;
         p1_2: float;
         p2_2: float;
         qty_2: float;
-        tif: TimeInForce.t;
+        tif: TimeInForce.t option;
         good_till_ts: int64; (* UNIX time in seconds. *)
-        open_close: open_or_close;
-        partial_fill_handling:partial_fill;
+        open_close: open_or_close option;
+        partial_fill_handling:partial_fill option;
         automated: bool;
         parent: string;
         text: string;
@@ -1019,21 +1014,21 @@ module Trading = struct
           ~symbol:(get_cs_symbol cs |> cstring_of_cstruct)
           ~exchange:(get_cs_exchange cs |> cstring_of_cstruct)
           ~cli_ord_id_1:(get_cs_order_id_1 cs |> cstring_of_cstruct)
-          ~ord_type_1:Option.(value_exn (get_cs_order_type_1 cs |> Int32.to_int_exn |> OrderType.of_enum))
-          ~buy_sell_1:Option.(value_exn (get_cs_buy_sell_1 cs |> Int32.to_int_exn |> buy_or_sell_of_enum))
+          ?ord_type_1:(get_cs_order_type_1 cs |> Int32.to_int_exn |> OrderType.of_enum)
+          ?buy_sell_1:(get_cs_buy_sell_1 cs |> Int32.to_int_exn |> buy_or_sell_of_enum)
           ~p1_1:Int64.(float_of_bits @@ get_cs_price1_1 cs)
           ~p2_1:Int64.(float_of_bits @@ get_cs_price2_1 cs)
           ~qty_1:Int64.(float_of_bits @@ get_cs_qty_1 cs)
           ~cli_ord_id_2:(get_cs_order_id_2 cs |> cstring_of_cstruct)
-          ~ord_type_2:Option.(value_exn (get_cs_order_type_2 cs |> Int32.to_int_exn |> OrderType.of_enum))
-          ~buy_sell_2:Option.(value_exn (get_cs_buy_sell_2 cs |> Int32.to_int_exn |> buy_or_sell_of_enum))
+          ?ord_type_2:(get_cs_order_type_2 cs |> Int32.to_int_exn |> OrderType.of_enum)
+          ?buy_sell_2:(get_cs_buy_sell_2 cs |> Int32.to_int_exn |> buy_or_sell_of_enum)
           ~p1_2:Int64.(float_of_bits @@ get_cs_price1_2 cs)
           ~p2_2:Int64.(float_of_bits @@ get_cs_price2_2 cs)
           ~qty_2:Int64.(float_of_bits @@ get_cs_qty_2 cs)
-          ~tif:Option.(value_exn (get_cs_tif cs |> Int32.to_int_exn |> TimeInForce.of_enum))
+          ?tif:(get_cs_tif cs |> Int32.to_int_exn |> TimeInForce.of_enum)
           ~good_till_ts:(get_cs_good_till_ts cs)
-          ~open_close:Option.(value_exn (get_cs_open_or_close cs |> Int32.to_int_exn |> open_or_close_of_enum))
-          ~partial_fill_handling:Option.(value_exn (get_cs_partial_fill_handling cs |> partial_fill_of_enum))
+          ?open_close:(get_cs_open_or_close cs |> Int32.to_int_exn |> open_or_close_of_enum)
+          ?partial_fill_handling:(get_cs_partial_fill_handling cs |> partial_fill_of_enum)
           ~automated:(get_cs_automated cs |> bool_of_int)
           ~parent:(get_cs_parent cs |> cstring_of_cstruct)
           ~text:(get_cs_text cs |> cstring_of_cstruct)
@@ -1050,8 +1045,8 @@ module Trading = struct
         qty: float;
         p1_set: bool;
         p2_set: bool;
-        ord_type: OrderType.t;
-        tif: TimeInForce.t;
+        ord_type: OrderType.t option;
+        tif: TimeInForce.t option;
         good_till_ts: int64;
       } [@@deriving show,create]
 
@@ -1064,8 +1059,8 @@ module Trading = struct
           ~qty:Int64.(float_of_bits @@ get_cs_qty cs)
           ~p1_set:(get_cs_price1_set cs |> bool_of_int)
           ~p2_set:(get_cs_price2_set cs |> bool_of_int)
-          ~ord_type:Option.(value_exn (get_cs_order_type cs |> Int32.to_int_exn |> OrderType.of_enum))
-          ~tif:Option.(value_exn (get_cs_tif cs |> Int32.to_int_exn |> TimeInForce.of_enum))
+          ?ord_type:(get_cs_order_type cs |> Int32.to_int_exn |> OrderType.of_enum)
+          ?tif:(get_cs_tif cs |> Int32.to_int_exn |> TimeInForce.of_enum)
           ~good_till_ts:(get_cs_good_till_ts cs)
           ()
     end
