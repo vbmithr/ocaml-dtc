@@ -275,18 +275,18 @@ type encoding =
   | Protobuf
   [@@deriving show, enum]
 
-let price_display_format_of_ticksize = function
-  | 1. -> Decimal_0
-  | 1e-1 -> Decimal_1
-  | 1e-2 -> Decimal_2
-  | 1e-3 -> Decimal_3
-  | 1e-4 -> Decimal_4
-  | 1e-5 -> Decimal_5
-  | 1e-6 -> Decimal_6
-  | 1e-7 -> Decimal_7
-  | 1e-8 -> Decimal_8
-  | 1e-9 -> Decimal_9
-  | _ -> invalid_arg "price_display_format_of_ticksize"
+let price_display_format_of_ticksize tickSize =
+  if tickSize >=. 1. then Decimal_0
+  else if tickSize =. 1e-1 then Decimal_1
+  else if tickSize =. 1e-2 then Decimal_2
+  else if tickSize =. 1e-3 then Decimal_3
+  else if tickSize =. 1e-4 then Decimal_4
+  else if tickSize =. 1e-5 then Decimal_5
+  else if tickSize =. 1e-6 then Decimal_6
+  else if tickSize =. 1e-7 then Decimal_7
+  else if tickSize =. 1e-8 then Decimal_8
+  else if tickSize =. 1e-9 then Decimal_9
+  else invalid_argf "price_display_format_of_ticksize: %f" tickSize ()
 
 type security =
   | Futures [@value 1]
