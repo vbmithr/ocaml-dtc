@@ -138,80 +138,64 @@ type msg =
   | HistoricalPriceDataTickRecordResponseInt
       [@@deriving show,enum]
 
-type logon_status =
-  | Success [@value 1]
-  | Error
-  | Error_no_reconnect
-  | Reconnect_new_address
-[@@deriving show,enum]
+module LogonStatus = struct
+  type t =
+    | Success [@value 1]
+    | Error
+    | Error_no_reconnect
+    | Reconnect_new_address
+  [@@deriving show,enum]
+end
 
-type message_supported =
-  | Unsupported
-  | Supported
+module TradeMode = struct
+  type t =
+    | Demo [@value 1]
+    | Simulated
+    | Live
+  [@@deriving show,enum]
+end
 
-type trade_mode =
-  | Demo [@value 1]
-  | Simulated
-  | Live
-[@@deriving show,enum]
+module RequestAction = struct
+  type t =
+    | Subscribe [@value 1]
+    | Unsubscribe
+    | Snapshot
+  [@@deriving show,enum]
+end
 
-type request_action =
-  | Subscribe [@value 1]
-  | Unsubscribe
-  | Snapshot
-[@@deriving show,enum]
+module OrderStatus = struct
+  type t =
+    | Sent [@value 1]
+    | Pending_open
+    | Pending_child
+    | Open
+    | Pending_cancel_replace
+    | Pending_cancel
+    | Filled
+    | Canceled
+    | Rejected
+    | Partially_filled
+  [@@deriving show,enum]
+end
 
-type order_status =
-  | Sent [@value 1]
-  | Pending_open
-  | Pending_child
-  | Open
-  | Pending_cancel_replace
-  | Pending_cancel
-  | Filled
-  | Canceled
-  | Rejected
-  | Partially_filled
-[@@deriving show,enum]
+module UpdateReason = struct
+  type t =
+    | Open_orders_request_response [@value 1]
+    | New_order_accepted
+    | General_order_update
+    | Filled
+    | Partially_filled
+    | Canceled
+    | Cancel_replace_complete
+    | New_order_rejected
+    | Cancel_rejected
+    | Cancel_replace_rejected
+  [@@deriving show,enum]
+end
 
-type update_reason =
-  | Open_orders_request_response [@value 1]
-  | New_order_accepted
-  | General_order_update
-  | Filled
-  | Partially_filled
-  | Canceled
-  | Cancel_replace_complete
-  | New_order_rejected
-  | Cancel_rejected
-  | Cancel_replace_rejected
-[@@deriving show,enum]
-
-type side =
+type bid_or_ask =
   | Bid [@value 1]
   | Ask
-[@@deriving show,enum]
-
-type market_depth_update_type =
-  | Insert_update [@value 1]
-  | Delete
-[@@deriving show,enum]
-
-type order_type =
-  | Market [@value 1]
-  | Limit
-  | Stop
-  | Stop_limit
-  | Market_if_touched
-[@@deriving show,enum]
-
-type time_in_force =
-  | Day [@value 1]
-  | Good_till_canceled
-  | Good_till_date_time
-  | Immediate_or_cancel
-  | All_or_none
-  | Fill_or_kill
 [@@deriving show,enum]
 
 type buy_or_sell =
@@ -219,20 +203,46 @@ type buy_or_sell =
   | Sell
 [@@deriving show,enum,sexp]
 
-type open_close_trade =
+type put_or_call =
+  | Call [@value 1]
+  | Put
+[@@deriving show,enum]
+
+type open_or_close =
   | Open [@value 1]
   | Close
 [@@deriving show,enum]
 
-type partial_fill =
-  | Reduce_quantity [@value 1]
-  | Immediate_cancel
-[@@deriving show, enum]
+type market_depth_update_type = [
+  | `Insert_update [@value 1]
+  | `Delete
+] [@@deriving show,enum]
 
-type market_data_feed_status =
-  | Unavailable [@value 1]
-  | Available
-[@@deriving enum]
+module OrderType = struct
+  type t =
+    | Market [@value 1]
+    | Limit
+    | Stop
+    | Stop_limit
+    | Market_if_touched
+  [@@deriving show,enum]
+end
+
+module TimeInForce = struct
+  type t =
+    | Day [@value 1]
+    | Good_till_canceled
+    | Good_till_date_time
+    | Immediate_or_cancel
+    | All_or_none
+    | Fill_or_kill
+  [@@deriving show,enum]
+end
+
+type partial_fill = [
+  | `Reduce_quantity [@value 1]
+  | `Immediate_cancel
+] [@@deriving show, enum]
 
 type price_display_format =
   | Decimal_0 [@value 0]
@@ -291,17 +301,6 @@ type security =
   | Mutual_fund
 [@@deriving show,enum]
 
-type put_or_call =
-  | Call [@value 1]
-  | Put
-[@@deriving show,enum]
-
-type historical_price_adat_reject_reason =
-  | Retry [@value 1]
-  | Abort
-  | Out_of_bounds
-  | Error
-
 let option_to_enum to_enum_f = function
   | None -> 0
   | Some v -> to_enum_f v
@@ -355,7 +354,7 @@ module Logon = struct
       integer_1: int32;
       integer_2: int32;
       heartbeat_interval: int32;
-      trade_mode: trade_mode;
+      trade_mode: TradeMode.t;
       trade_account: string;
       hardware_id: string;
       client_name: string;
@@ -371,7 +370,7 @@ module Logon = struct
         ~integer_2:(get_cs_integer_2 cs)
         ~heartbeat_interval:(get_cs_heartbeat_interval cs)
         ~trade_mode:(Option.value_exn
-            (get_cs_trade_mode cs |> Int32.to_int_exn |> trade_mode_of_enum))
+            (get_cs_trade_mode cs |> Int32.to_int_exn |> TradeMode.of_enum))
         ~trade_account:(get_cs_trade_account cs |> cstring_of_cstruct)
         ~hardware_id:(get_cs_hardware_indentifier cs |> cstring_of_cstruct)
         ~client_name:(get_cs_client_name cs |> cstring_of_cstruct) ()
@@ -381,7 +380,7 @@ module Logon = struct
     include Logon.Response
     type t = {
       protocol_version: int [@default current_version];
-      result: logon_status;
+      result: LogonStatus.t;
       result_text: string;
       reconnect_address: string [@default "0.0.0.0/0"];
       integer_1: int32 [@default 0l];
@@ -406,7 +405,7 @@ module Logon = struct
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum LogonResponse);
       set_cs_protocol_version cs @@ Int32.of_int_exn t.protocol_version;
-      set_cs_result cs (Int32.of_int_exn @@ logon_status_to_enum t.result);
+      set_cs_result cs (Int32.of_int_exn @@ LogonStatus.to_enum t.result);
       set_cs_result_text (bytes_with_msg t.result_text Lengths.text_description) 0 cs;
       set_cs_reconnect_address (bytes_with_msg t.reconnect_address 64) 0 cs;
       set_cs_integer_1 cs t.integer_1;
@@ -462,7 +461,7 @@ module MarketData = struct
   module Request = struct
     include MarketData.Request
     type t = {
-      action: request_action;
+      action: RequestAction.t;
       symbol_id: int;
       symbol: string;
       exchange: string;
@@ -472,7 +471,7 @@ module MarketData = struct
       create
         ~action:(Option.value_exn
                    (get_cs_action cs
-                    |> Int32.to_int_exn |> request_action_of_enum)
+                    |> Int32.to_int_exn |> RequestAction.of_enum)
                 )
         ~symbol_id:(get_cs_symbol_id cs)
         ~symbol:(get_cs_symbol cs |> cstring_of_cstruct)
@@ -538,7 +537,7 @@ module MarketData = struct
     include MarketData.UpdateTrade
     type t = {
       symbol_id: int;
-      side: side;
+      side: bid_or_ask;
       p: float;
       v: float;
       ts: float;
@@ -548,7 +547,7 @@ module MarketData = struct
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum MarketDataUpdateTrade);
       set_cs_symbol_id cs t.symbol_id;
-      set_cs_at_bid_or_ask cs @@ side_to_enum t.side;
+      set_cs_at_bid_or_ask cs @@ bid_or_ask_to_enum t.side;
       set_cs_p cs @@ Int64.bits_of_float t.p;
       set_cs_v cs @@ Int64.bits_of_float t.v;
       set_cs_ts cs @@ Int64.bits_of_float t.ts
@@ -559,7 +558,7 @@ module MarketData = struct
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum MarketDataUpdateTrade);
       set_cs_symbol_id cs symbol_id;
-      set_cs_at_bid_or_ask cs @@ side_to_enum side;
+      set_cs_at_bid_or_ask cs @@ bid_or_ask_to_enum side;
       set_cs_p cs @@ Int64.bits_of_float p;
       set_cs_v cs @@ Int64.bits_of_float v;
       set_cs_ts cs @@ Int64.bits_of_float ts
@@ -634,7 +633,7 @@ module MarketDepth = struct
   module Request = struct
     include MarketDepth.Request
     type t = {
-      action: request_action;
+      action: RequestAction.t;
       symbol_id: int;
       symbol: string;
       exchange: string;
@@ -644,7 +643,7 @@ module MarketDepth = struct
     let read cs = create
         ~action:(Option.value_exn
                    (get_cs_action cs
-                    |> Int32.to_int_exn |> request_action_of_enum)
+                    |> Int32.to_int_exn |> RequestAction.of_enum)
                 )
         ~symbol_id:(get_cs_symbol_id cs)
         ~symbol:(get_cs_symbol cs |> cstring_of_cstruct)
@@ -667,7 +666,7 @@ module MarketDepth = struct
     include MarketDepth.Snapshot
     type t = {
       symbol_id: int;
-      side: side;
+      side: bid_or_ask;
       p: float;
       v: float;
       level: int;
@@ -679,7 +678,7 @@ module MarketDepth = struct
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum MarketDepthSnapshotLevel);
       set_cs_symbol_id cs t.symbol_id;
-      set_cs_side cs (t.side |> side_to_enum);
+      set_cs_side cs (t.side |> bid_or_ask_to_enum);
       set_cs_p cs (Int64.bits_of_float t.p);
       set_cs_v cs (Int64.bits_of_float t.v);
       set_cs_level cs t.level;
@@ -690,7 +689,7 @@ module MarketDepth = struct
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum MarketDepthSnapshotLevel);
       set_cs_symbol_id cs symbol_id;
-      set_cs_side cs (side |> side_to_enum);
+      set_cs_side cs (side |> bid_or_ask_to_enum);
       set_cs_p cs (Int64.bits_of_float p);
       set_cs_v cs (Int64.bits_of_float v);
       set_cs_level cs lvl;
@@ -702,7 +701,7 @@ module MarketDepth = struct
     include MarketDepth.Update
     type t = {
       symbol_id: int;
-      side: side option;
+      side: bid_or_ask option;
       p: float [@default 0.];
       v: float [@default 0.];
       op: market_depth_update_type option;
@@ -712,7 +711,7 @@ module MarketDepth = struct
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum MarketDepthUpdateLevel);
       set_cs_symbol_id cs t.symbol_id;
-      set_cs_side cs (option_to_enum side_to_enum t.side);
+      set_cs_side cs (option_to_enum bid_or_ask_to_enum t.side);
       set_cs_p cs (Int64.bits_of_float t.p);
       set_cs_v cs (Int64.bits_of_float t.v);
       set_cs_op cs (option_to_enum market_depth_update_type_to_enum t.op)
@@ -721,7 +720,7 @@ module MarketDepth = struct
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum MarketDepthUpdateLevel);
       set_cs_symbol_id cs symbol_id;
-      set_cs_side cs (option_to_enum side_to_enum side);
+      set_cs_side cs (option_to_enum bid_or_ask_to_enum side);
       set_cs_p cs Int64.(bits_of_float p);
       set_cs_v cs Int64.(bits_of_float v);
       set_cs_op cs (op |> market_depth_update_type_to_enum)
@@ -934,7 +933,7 @@ module HistoricalPriceData = struct
       set_cs__type cs (msg_to_enum HistoricalPriceDataTickRecordResponse);
       set_cs_request_id cs request_id;
       set_cs_timestamp cs (Int64.bits_of_float @@ Int64.to_float ts /. 1e9);
-      set_cs_side cs (side_to_enum side);
+      set_cs_side cs (bid_or_ask_to_enum side);
       set_cs_price cs @@ Int64.bits_of_float p;
       set_cs_volume cs @@ Int64.bits_of_float v;
       set_cs_final cs (int_of_bool final)
@@ -950,13 +949,13 @@ module Trading = struct
         symbol: string;
         exchange: string;
         cli_ord_id: string;
-        ord_type: order_type;
+        ord_type: OrderType.t;
         buy_sell: buy_or_sell;
-        open_close: open_close_trade;
+        open_close: open_or_close;
         p1: float;
         p2: float;
         qty: float;
-        tif: time_in_force;
+        tif: TimeInForce.t;
         good_till_ts: int64; (* UNIX time in seconds. *)
         automated: bool;
         parent: bool;
@@ -970,16 +969,16 @@ module Trading = struct
           ~exchange:(get_cs_exchange cs |> cstring_of_cstruct)
           ~cli_ord_id:(get_cs_order_id cs |> cstring_of_cstruct)
           ~ord_type:Option.(value_exn (get_cs_order_type cs |> Int32.to_int_exn |>
-                                       order_type_of_enum))
+                                       OrderType.of_enum))
           ~buy_sell:Option.(value_exn (get_cs_buy_sell cs |> Int32.to_int_exn |>
                                        buy_or_sell_of_enum))
           ~open_close:Option.(value_exn (get_cs_open_or_close cs |> Int32.to_int_exn |>
-                                         open_close_trade_of_enum))
+                                         open_or_close_of_enum))
           ~p1:Int64.(float_of_bits @@ get_cs_price1 cs)
           ~p2:Int64.(float_of_bits @@ get_cs_price2 cs)
           ~qty:Int64.(float_of_bits @@ get_cs_qty cs)
           ~tif:Option.(value_exn (get_cs_tif cs |> Int32.to_int_exn |>
-                                  time_in_force_of_enum))
+                                  TimeInForce.of_enum))
           ~good_till_ts:(get_cs_good_till_ts cs)
           ~automated:(get_cs_automated cs |> bool_of_int)
           ~parent:(get_cs_parent cs |> bool_of_int)
@@ -994,20 +993,20 @@ module Trading = struct
         symbol: string;
         exchange: string;
         cli_ord_id_1: string;
-        ord_type_1: order_type;
+        ord_type_1: OrderType.t;
         buy_sell_1: buy_or_sell;
         p1_1: float;
         p2_1: float;
         qty_1: float;
         cli_ord_id_2: string;
-        ord_type_2: order_type;
+        ord_type_2: OrderType.t;
         buy_sell_2: buy_or_sell;
         p1_2: float;
         p2_2: float;
         qty_2: float;
-        tif: time_in_force;
+        tif: TimeInForce.t;
         good_till_ts: int64; (* UNIX time in seconds. *)
-        open_close: open_close_trade;
+        open_close: open_or_close;
         partial_fill_handling:partial_fill;
         automated: bool;
         parent: string;
@@ -1020,20 +1019,20 @@ module Trading = struct
           ~symbol:(get_cs_symbol cs |> cstring_of_cstruct)
           ~exchange:(get_cs_exchange cs |> cstring_of_cstruct)
           ~cli_ord_id_1:(get_cs_order_id_1 cs |> cstring_of_cstruct)
-          ~ord_type_1:Option.(value_exn (get_cs_order_type_1 cs |> Int32.to_int_exn |> order_type_of_enum))
+          ~ord_type_1:Option.(value_exn (get_cs_order_type_1 cs |> Int32.to_int_exn |> OrderType.of_enum))
           ~buy_sell_1:Option.(value_exn (get_cs_buy_sell_1 cs |> Int32.to_int_exn |> buy_or_sell_of_enum))
           ~p1_1:Int64.(float_of_bits @@ get_cs_price1_1 cs)
           ~p2_1:Int64.(float_of_bits @@ get_cs_price2_1 cs)
           ~qty_1:Int64.(float_of_bits @@ get_cs_qty_1 cs)
           ~cli_ord_id_2:(get_cs_order_id_2 cs |> cstring_of_cstruct)
-          ~ord_type_2:Option.(value_exn (get_cs_order_type_2 cs |> Int32.to_int_exn |> order_type_of_enum))
+          ~ord_type_2:Option.(value_exn (get_cs_order_type_2 cs |> Int32.to_int_exn |> OrderType.of_enum))
           ~buy_sell_2:Option.(value_exn (get_cs_buy_sell_2 cs |> Int32.to_int_exn |> buy_or_sell_of_enum))
           ~p1_2:Int64.(float_of_bits @@ get_cs_price1_2 cs)
           ~p2_2:Int64.(float_of_bits @@ get_cs_price2_2 cs)
           ~qty_2:Int64.(float_of_bits @@ get_cs_qty_2 cs)
-          ~tif:Option.(value_exn (get_cs_tif cs |> Int32.to_int_exn |> time_in_force_of_enum))
+          ~tif:Option.(value_exn (get_cs_tif cs |> Int32.to_int_exn |> TimeInForce.of_enum))
           ~good_till_ts:(get_cs_good_till_ts cs)
-          ~open_close:Option.(value_exn (get_cs_open_or_close cs |> Int32.to_int_exn |> open_close_trade_of_enum))
+          ~open_close:Option.(value_exn (get_cs_open_or_close cs |> Int32.to_int_exn |> open_or_close_of_enum))
           ~partial_fill_handling:Option.(value_exn (get_cs_partial_fill_handling cs |> partial_fill_of_enum))
           ~automated:(get_cs_automated cs |> bool_of_int)
           ~parent:(get_cs_parent cs |> cstring_of_cstruct)
@@ -1051,8 +1050,8 @@ module Trading = struct
         qty: float;
         p1_set: bool;
         p2_set: bool;
-        ord_type: order_type;
-        tif: time_in_force;
+        ord_type: OrderType.t;
+        tif: TimeInForce.t;
         good_till_ts: int64;
       } [@@deriving show,create]
 
@@ -1065,8 +1064,8 @@ module Trading = struct
           ~qty:Int64.(float_of_bits @@ get_cs_qty cs)
           ~p1_set:(get_cs_price1_set cs |> bool_of_int)
           ~p2_set:(get_cs_price2_set cs |> bool_of_int)
-          ~ord_type:Option.(value_exn (get_cs_order_type cs |> Int32.to_int_exn |> order_type_of_enum))
-          ~tif:Option.(value_exn (get_cs_tif cs |> Int32.to_int_exn |> time_in_force_of_enum))
+          ~ord_type:Option.(value_exn (get_cs_order_type cs |> Int32.to_int_exn |> OrderType.of_enum))
+          ~tif:Option.(value_exn (get_cs_tif cs |> Int32.to_int_exn |> TimeInForce.of_enum))
           ~good_till_ts:(get_cs_good_till_ts cs)
           ()
     end
@@ -1135,14 +1134,14 @@ module Trading = struct
         set_cs_server_order_id (bytes_with_msg srv_ord_id 32) 0 cs;
         set_cs_client_order_id (bytes_with_msg cli_ord_id 32) 0 cs;
         set_cs_exchange_order_id (bytes_with_msg xch_ord_id 32) 0 cs;
-        set_cs_order_status cs (option_to_enum order_status_to_enum status |> Int32.of_int_exn);
+        set_cs_order_status cs (option_to_enum OrderStatus.to_enum status |> Int32.of_int_exn);
         set_cs_order_update_reason cs
-          (option_to_enum update_reason_to_enum reason |> Int32.of_int_exn);
-        set_cs_order_type cs (option_to_enum order_type_to_enum ord_type |> Int32.of_int_exn);
+          (option_to_enum UpdateReason.to_enum reason |> Int32.of_int_exn);
+        set_cs_order_type cs (option_to_enum OrderType.to_enum ord_type |> Int32.of_int_exn);
         set_cs_buy_sell cs (option_to_enum buy_or_sell_to_enum buy_sell |> Int32.of_int_exn);
         set_cs_price1 cs @@ Int64.bits_of_float p1;
         set_cs_price2 cs @@ Int64.bits_of_float p2;
-        set_cs_tif cs (option_to_enum time_in_force_to_enum tif |> Int32.of_int_exn);
+        set_cs_tif cs (option_to_enum TimeInForce.to_enum tif |> Int32.of_int_exn);
         set_cs_good_till_ts cs good_till_ts;
         set_cs_order_qty cs @@ Int64.bits_of_float order_qty;
         set_cs_filled_qty cs @@ Int64.bits_of_float filled_qty;
@@ -1157,7 +1156,7 @@ module Trading = struct
         set_cs_info_text (bytes_with_msg info_text 96) 0 cs;
         set_cs_parent_server_order_id (bytes_with_msg parent_srv_ord_id 32) 0 cs;
         set_cs_oco_linked_order_server_order_id (bytes_with_msg oco_linked_ord_srv_ord_id 32) 0 cs;
-        set_cs_open_or_close cs (option_to_enum open_close_trade_to_enum open_or_close |> Int32.of_int_exn);
+        set_cs_open_or_close cs (option_to_enum open_or_close_to_enum open_or_close |> Int32.of_int_exn);
         set_cs_previous_client_order_id (bytes_with_msg previous_client_order_id 32) 0 cs;
         set_cs_free_form_text (bytes_with_msg info_text 48) 0 cs;
         set_cs_received_ts cs last_fill_ts
@@ -1232,7 +1231,7 @@ module Trading = struct
           set_cs_ts cs @@ Int64.(ts / 1_000_000_000L);
           set_cs_unique_exec_id (bytes_with_msg exec_id 64) 0 cs;
           set_cs_trade_account (bytes_with_msg trade_account Lengths.trade_account) 0 cs;
-          set_cs_open_close cs (option_to_enum open_close_trade_to_enum open_close |> Int32.of_int_exn);
+          set_cs_open_close cs (option_to_enum open_or_close_to_enum open_close |> Int32.of_int_exn);
           set_cs_no_order_fills cs (int_of_bool no_order_fills)
       end
     end
