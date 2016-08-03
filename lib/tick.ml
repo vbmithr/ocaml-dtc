@@ -3,19 +3,22 @@ open Core.Std
 type t = {
   p: Int63.t;
   v: Int63.t;
-  side: Dtc_intf.buy_or_sell;
+  side: Dtc_intf.buy_or_sell option;
   ts: Time_ns.t
 } [@@deriving create,sexp]
 
 let compare t t' = compare t#p t'#p
 
 let side_of_int64 = function
-  | 0L -> `Unset
-  | 1L -> `Buy
-  | 2L -> `Sell
+  | 0L -> None
+  | 1L -> Some Dtc_intf.Buy
+  | 2L -> Some Sell
   | _ -> invalid_arg "side_of_int64"
 
-let int64_of_side = function `Unset -> 0L | `Buy -> 1L | `Sell -> 2L
+let int64_of_side = function
+  | None -> 0L
+  | Some Dtc_intf.Buy -> 1L
+  | Some Sell -> 2L
 
 let int64_of_v_side v side =
   let open Int64 in
@@ -53,13 +56,13 @@ module TickIO (IO: IO) = struct
     let p = Int63.of_int64_exn @@ get_int64_le b (pos+8) in
     let v = get_int64_le b (pos+16) in
     let v, side = v_side_of_int64 v in
-    create ~ts ~p ~v ~side ()
+    create ~ts ~p ~v ?side ()
 
   let read' ?(pos=0) ~ts ~data () =
     let p = Int63.of_int64_exn @@ get_int64_le data pos in
     let v = get_int64_le data (pos+8) in
     let v, side = v_side_of_int64 v in
-    create ~ts ~p ~v ~side ()
+    create ~ts ~p ~v ?side ()
 end
 
 module BytesIO = struct
@@ -101,7 +104,7 @@ let of_scid_record r =
     ~ts:(ts |> Int63.of_float |> Time_ns.of_int63_ns_since_epoch)
     ~p:(Int63.of_float @@ r.Scid.R.c *. 1e8)
     ~v:(Int63.(of_int64_exn r.Scid.R.total_volume * of_int 10_000))
-    ~side:(if r.Scid.R.bid_volume = 0L then `Buy else `Sell) ()
+    ~side:(if r.Scid.R.bid_volume = 0L then Buy else Sell) ()
 
 module LevelDB_ext = struct
   let length db =

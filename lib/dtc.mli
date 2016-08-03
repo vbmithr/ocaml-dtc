@@ -6,7 +6,7 @@ module Tick : sig
   type t = {
     p: Int63.t;
     v: Int63.t;
-    side: Dtc.buy_or_sell;
+    side: Dtc.buy_or_sell option;
     ts: Time_ns.t
   } [@@deriving create,sexp]
 

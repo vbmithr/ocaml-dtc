@@ -139,173 +139,172 @@ type msg =
       [@@deriving show,enum]
 
 type logon_status =
-  [ `Success [@value 1]
-  | `Error
-  | `Error_no_reconnect
-  | `Reconnect_new_address
-  ] [@@deriving show,enum]
+  | Success [@value 1]
+  | Error
+  | Error_no_reconnect
+  | Reconnect_new_address
+[@@deriving show,enum]
 
 type message_supported =
-  [ `Supported
-  | `Unsupported
-  ]
+  | Unsupported
+  | Supported
 
 type trade_mode =
-  [
-  | `Unset
-  | `Demo
-  | `Simulated
-  | `Live
-  ] [@@deriving show,enum]
+  | Demo [@value 1]
+  | Simulated
+  | Live
+[@@deriving show,enum]
 
 type request_action =
-  [ `Subscribe [@value 1]
-  | `Unsubscribe
-  | `Snapshot
-  ] [@@deriving show,enum]
+  | Subscribe [@value 1]
+  | Unsubscribe
+  | Snapshot
+[@@deriving show,enum]
 
 type order_status =
-  [ `Unset
-  | `Sent
-  | `Pending_open
-  | `Pending_child
-  | `Open
-  | `Pending_cancel_replace
-  | `Pending_cancel
-  | `Filled
-  | `Canceled
-  | `Rejected
-  | `Partially_filled
-  ] [@@deriving show,enum]
+  | Sent [@value 1]
+  | Pending_open
+  | Pending_child
+  | Open
+  | Pending_cancel_replace
+  | Pending_cancel
+  | Filled
+  | Canceled
+  | Rejected
+  | Partially_filled
+[@@deriving show,enum]
 
 type update_reason =
-  [ `Unset
-  | `Open_orders_request_response
-  | `New_order_accepted
-  | `General_order_update
-  | `Filled
-  | `Partially_filled
-  | `Canceled
-  | `Cancel_replace_complete
-  | `New_order_rejected
-  | `Cancel_rejected
-  | `Cancel_replace_rejected
-  ] [@@deriving show,enum]
+  | Open_orders_request_response [@value 1]
+  | New_order_accepted
+  | General_order_update
+  | Filled
+  | Partially_filled
+  | Canceled
+  | Cancel_replace_complete
+  | New_order_rejected
+  | Cancel_rejected
+  | Cancel_replace_rejected
+[@@deriving show,enum]
 
 type side =
-  [ `Unset
-  | `Bid
-  | `Ask
-  ] [@@deriving show,enum]
+  | Bid [@value 1]
+  | Ask
+[@@deriving show,enum]
 
 type market_depth_update_type =
-  [ `Unset
-  | `Insert_update
-  | `Delete
-  ] [@@deriving show,enum]
+  | Insert_update [@value 1]
+  | Delete
+[@@deriving show,enum]
 
 type order_type =
-  [ `Unset
-  | `Market
-  | `Limit
-  | `Stop
-  | `Stop_limit
-  | `Market_if_touched
-  ] [@@deriving show,enum]
+  | Market [@value 1]
+  | Limit
+  | Stop
+  | Stop_limit
+  | Market_if_touched
+[@@deriving show,enum]
 
 type time_in_force =
-  [ `Unset
-  | `Day
-  | `Good_till_canceled
-  | `Good_till_date_time
-  | `Immediate_or_cancel
-  | `All_or_none
-  | `Fill_or_kill
-  ] [@@deriving show,enum]
+  | Day [@value 1]
+  | Good_till_canceled
+  | Good_till_date_time
+  | Immediate_or_cancel
+  | All_or_none
+  | Fill_or_kill
+[@@deriving show,enum]
 
 type buy_or_sell =
-  [ `Unset
-  | `Buy
-  | `Sell
-  ] [@@deriving show,enum,sexp]
+  | Buy [@value 1]
+  | Sell
+[@@deriving show,enum,sexp]
 
 type open_close_trade =
-  [ `Unset
-  | `Open
-  | `Close
-  ] [@@deriving show,enum]
-
-type market_data_feed_status =
-  [ `Feed_lost [@value 1]
-  | `Feed_restored
-  ] [@@deriving enum]
-
-type price_display_format =
-  [ `Unset [@value -1]
-  | `Decimal_0 [@value 0]
-  | `Decimal_1
-  | `Decimal_2
-  | `Decimal_3
-  | `Decimal_4
-  | `Decimal_5
-  | `Decimal_6
-  | `Decimal_7
-  | `Decimal_8
-  | `Decimal_9
-  | `Denominator_256 [@value 356]
-  | `Denominator_128 [@value 228]
-  | `Denominator_64 [@value 164]
-  | `Denominator_32_Q [@value 136]
-  | `Denominator_32_H [@value 134]
-  | `Denominator_32 [@value 132]
-  | `Denominator_16 [@value 116]
-  | `Denominator_8 [@value 108]
-  | `Denominator_4 [@value 104]
-  | `Denominator_2 [@value 102]
-  ] [@@deriving show,enum]
-
-type encoding =
-  [ `Binary
-  | `Binary_vlen
-  | `Json
-  | `Json_compact
-  | `Protobuf
-  ] [@@deriving show, enum]
+  | Open [@value 1]
+  | Close
+[@@deriving show,enum]
 
 type partial_fill =
-  [ `Unset
-  | `Reduce_quantity
-  | `Immediate_cancel
-  ] [@@deriving show, enum]
+  | Reduce_quantity [@value 1]
+  | Immediate_cancel
+[@@deriving show, enum]
+
+type market_data_feed_status =
+  | Unavailable [@value 1]
+  | Available
+[@@deriving enum]
+
+type price_display_format =
+  | Decimal_0 [@value 0]
+  | Decimal_1
+  | Decimal_2
+  | Decimal_3
+  | Decimal_4
+  | Decimal_5
+  | Decimal_6
+  | Decimal_7
+  | Decimal_8
+  | Decimal_9
+  | Denominator_256 [@value 356]
+  | Denominator_128 [@value 228]
+  | Denominator_64 [@value 164]
+  | Denominator_32_Q [@value 136]
+  | Denominator_32_H [@value 134]
+  | Denominator_32 [@value 132]
+  | Denominator_16 [@value 116]
+  | Denominator_8 [@value 108]
+  | Denominator_4 [@value 104]
+  | Denominator_2 [@value 102]
+[@@deriving show,enum]
+
+type encoding =
+  | Binary
+  | Binary_vlen
+  | Json
+  | Json_compact
+  | Protobuf
+  [@@deriving show, enum]
 
 let price_display_format_of_ticksize = function
-  | 1. -> `Decimal_0
-  | 1e-1 -> `Decimal_1
-  | 1e-2 -> `Decimal_2
-  | 1e-3 -> `Decimal_3
-  | 1e-4 -> `Decimal_4
-  | 1e-5 -> `Decimal_5
-  | 1e-6 -> `Decimal_6
-  | 1e-7 -> `Decimal_7
-  | 1e-8 -> `Decimal_8
-  | 1e-9 -> `Decimal_9
-  | _ -> `Unset
+  | 1. -> Decimal_0
+  | 1e-1 -> Decimal_1
+  | 1e-2 -> Decimal_2
+  | 1e-3 -> Decimal_3
+  | 1e-4 -> Decimal_4
+  | 1e-5 -> Decimal_5
+  | 1e-6 -> Decimal_6
+  | 1e-7 -> Decimal_7
+  | 1e-8 -> Decimal_8
+  | 1e-9 -> Decimal_9
+  | _ -> invalid_arg "price_display_format_of_ticksize"
 
 type security =
-  [ `Unset
-  | `Future
-  | `Stock
-  | `Forex
-  | `Index
-  | `Futures_strategy
-  | `Stock_option
-  | `Futures_option
-  | `Index_option
-  | `Bond
-  | `Mutual_fund
-  ] [@@deriving show,enum]
+  | Futures [@value 1]
+  | Stock
+  | Forex
+  | Index
+  | Futures_strategy
+  | Stock_option
+  | Futures_option
+  | Index_option
+  | Bond
+  | Mutual_fund
+[@@deriving show,enum]
 
-type put_or_call = [`Unset | `Call | `Put] [@@deriving show,enum]
+type put_or_call =
+  | Call [@value 1]
+  | Put
+[@@deriving show,enum]
+
+type historical_price_adat_reject_reason =
+  | Retry [@value 1]
+  | Abort
+  | Out_of_bounds
+  | Error
+
+let option_to_enum to_enum_f = function
+  | None -> 0
+  | Some v -> to_enum_f v
 
 open Cstructs
 
@@ -341,7 +340,7 @@ module Encoding = struct
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum EncodingResponse);
       set_cs_version cs Int32.(of_int_exn current_version);
-      set_cs_encoding cs Int32.(of_int_exn @@ encoding_to_enum `Binary)
+      set_cs_encoding cs Int32.(of_int_exn @@ encoding_to_enum Binary)
   end
 end
 
@@ -703,26 +702,26 @@ module MarketDepth = struct
     include MarketDepth.Update
     type t = {
       symbol_id: int;
-      side: side [@default `Unset];
+      side: side option;
       p: float [@default 0.];
       v: float [@default 0.];
-      op: market_depth_update_type [@default `Unset];
+      op: market_depth_update_type option;
     } [@@deriving show,create]
 
     let to_cstruct cs t =
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum MarketDepthUpdateLevel);
       set_cs_symbol_id cs t.symbol_id;
-      set_cs_side cs (side_to_enum t.side);
+      set_cs_side cs (option_to_enum side_to_enum t.side);
       set_cs_p cs (Int64.bits_of_float t.p);
       set_cs_v cs (Int64.bits_of_float t.v);
-      set_cs_op cs (t.op |> market_depth_update_type_to_enum)
+      set_cs_op cs (option_to_enum market_depth_update_type_to_enum t.op)
 
-    let write ~symbol_id ?(side=`Unset) ?(p=0.) ?(v=0.) ~op cs =
+    let write ~symbol_id ?side ?(p=0.) ?(v=0.) ~op cs =
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum MarketDepthUpdateLevel);
       set_cs_symbol_id cs symbol_id;
-      set_cs_side cs (side_to_enum side);
+      set_cs_side cs (option_to_enum side_to_enum side);
       set_cs_p cs Int64.(bits_of_float p);
       set_cs_v cs Int64.(bits_of_float v);
       set_cs_op cs (op |> market_depth_update_type_to_enum)
@@ -774,7 +773,7 @@ module SecurityDefinition = struct
       underlying_symbol: string [@default ""];
       updates_bid_ask_only: bool [@default false];
       strike_price: float [@default 0.]; (* only for options *)
-      put_or_call: put_or_call [@default `Unset]; (* only for options *)
+      put_or_call: put_or_call option; (* only for options *)
       short_interest: int32 [@default 0l]; (* only for stock *)
       expiration_date: int32 [@default 0l]; (* only for futures/options *)
       buy_rollover_interest: float [@default 0.]; (* only for forex *)
@@ -805,7 +804,7 @@ module SecurityDefinition = struct
       set_cs_underlying_symbol (bytes_with_msg t.underlying_symbol Lengths.underlying_symbol) 0 cs;
       set_cs_updates_bid_ask_only cs @@ int_of_bool t.updates_bid_ask_only;
       set_cs_strike_price cs @@ Int32.bits_of_float t.strike_price;
-      set_cs_put_or_call cs @@ put_or_call_to_enum t.put_or_call;
+      set_cs_put_or_call cs @@ option_to_enum put_or_call_to_enum t.put_or_call;
       set_cs_short_interest cs t.short_interest;
       set_cs_security_expiration_date cs t.expiration_date;
       set_cs_buy_rollover_interest cs @@ Int32.bits_of_float t.buy_rollover_interest;
@@ -1099,13 +1098,13 @@ module Trading = struct
           ?(cli_ord_id="")
           ?(srv_ord_id="")
           ?(xch_ord_id="")
-          ?(status=`Unset)
-          ?(reason=`Unset)
-          ?(ord_type=`Unset)
-          ?(buy_sell=`Unset)
+          ?status
+          ?reason
+          ?ord_type
+          ?buy_sell
           ?(p1=Float.max_finite_value)
           ?(p2=Float.max_finite_value)
-          ?(tif=`Unset)
+          ?tif
           ?(good_till_ts=0L)
           ?(order_qty=Float.max_finite_value)
           ?(filled_qty=Float.max_finite_value)
@@ -1120,7 +1119,7 @@ module Trading = struct
           ?(no_orders=false)
           ?(parent_srv_ord_id="")
           ?(oco_linked_ord_srv_ord_id="")
-          ?(open_or_close=`Unset)
+          ?open_or_close
           ?(previous_client_order_id="")
           ?(free_form_text="")
           ?(received_ts=0L)
@@ -1136,14 +1135,14 @@ module Trading = struct
         set_cs_server_order_id (bytes_with_msg srv_ord_id 32) 0 cs;
         set_cs_client_order_id (bytes_with_msg cli_ord_id 32) 0 cs;
         set_cs_exchange_order_id (bytes_with_msg xch_ord_id 32) 0 cs;
-        set_cs_order_status cs (order_status_to_enum status |> Int32.of_int_exn);
+        set_cs_order_status cs (option_to_enum order_status_to_enum status |> Int32.of_int_exn);
         set_cs_order_update_reason cs
-          (update_reason_to_enum reason |> Int32.of_int_exn);
-        set_cs_order_type cs (order_type_to_enum ord_type |> Int32.of_int_exn);
-        set_cs_buy_sell cs (buy_or_sell_to_enum buy_sell |> Int32.of_int_exn);
+          (option_to_enum update_reason_to_enum reason |> Int32.of_int_exn);
+        set_cs_order_type cs (option_to_enum order_type_to_enum ord_type |> Int32.of_int_exn);
+        set_cs_buy_sell cs (option_to_enum buy_or_sell_to_enum buy_sell |> Int32.of_int_exn);
         set_cs_price1 cs @@ Int64.bits_of_float p1;
         set_cs_price2 cs @@ Int64.bits_of_float p2;
-        set_cs_tif cs @@ Int32.of_int_exn @@ time_in_force_to_enum tif;
+        set_cs_tif cs (option_to_enum time_in_force_to_enum tif |> Int32.of_int_exn);
         set_cs_good_till_ts cs good_till_ts;
         set_cs_order_qty cs @@ Int64.bits_of_float order_qty;
         set_cs_filled_qty cs @@ Int64.bits_of_float filled_qty;
@@ -1158,7 +1157,7 @@ module Trading = struct
         set_cs_info_text (bytes_with_msg info_text 96) 0 cs;
         set_cs_parent_server_order_id (bytes_with_msg parent_srv_ord_id 32) 0 cs;
         set_cs_oco_linked_order_server_order_id (bytes_with_msg oco_linked_ord_srv_ord_id 32) 0 cs;
-        set_cs_open_or_close cs Int32.(of_int_exn @@ open_close_trade_to_enum open_or_close);
+        set_cs_open_or_close cs (option_to_enum open_close_trade_to_enum open_or_close |> Int32.of_int_exn);
         set_cs_previous_client_order_id (bytes_with_msg previous_client_order_id 32) 0 cs;
         set_cs_free_form_text (bytes_with_msg info_text 48) 0 cs;
         set_cs_received_ts cs last_fill_ts
@@ -1213,8 +1212,8 @@ module Trading = struct
             ?(exchange="")
             ?(srv_order_id="")
             ?(exec_id="")
-            ?(buy_sell=`Unset)
-            ?(open_close=`Unset)
+            ?buy_sell
+            ?open_close
             ?(p=0.)
             ?(v=0.)
             ?(ts=0L)
@@ -1227,13 +1226,13 @@ module Trading = struct
           set_cs_symbol (bytes_with_msg symbol Lengths.symbol) 0 cs;
           set_cs_exchange (bytes_with_msg exchange Lengths.exchange) 0 cs;
           set_cs_server_order_id (bytes_with_msg srv_order_id Lengths.order_id) 0 cs;
-          set_cs_buy_sell cs (buy_or_sell_to_enum buy_sell |> Int32.of_int_exn);
+          set_cs_buy_sell cs (option_to_enum buy_or_sell_to_enum buy_sell |> Int32.of_int_exn);
           set_cs_price cs @@ Int64.bits_of_float p;
           set_cs_qty cs @@ Int64.bits_of_float v;
           set_cs_ts cs @@ Int64.(ts / 1_000_000_000L);
           set_cs_unique_exec_id (bytes_with_msg exec_id 64) 0 cs;
           set_cs_trade_account (bytes_with_msg trade_account Lengths.trade_account) 0 cs;
-          set_cs_open_close cs (open_close_trade_to_enum open_close |> Int32.of_int_exn);
+          set_cs_open_close cs (option_to_enum open_close_trade_to_enum open_close |> Int32.of_int_exn);
           set_cs_no_order_fills cs (int_of_bool no_order_fills)
       end
     end
