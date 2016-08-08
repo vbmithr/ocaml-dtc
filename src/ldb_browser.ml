@@ -1,9 +1,14 @@
 open Core.Std
 
 type stats = {
+  nb_records: int;
+  ts_start: Time_ns.t;
+  ts_stop: Time_ns.t;
   avg_p: int;
   avg_v: int;
   stddev_v: float;
+  avg_cluster_size: float;
+  stddev_cluster_size: float;
 } [@@deriving create, sexp]
 
 type display = Rows | Distrib | Stats
@@ -13,55 +18,61 @@ let display_of_string = function
   | "stats" -> Stats
   | _ -> invalid_arg "display_of_string"
 
-let variance ?max_ticks dbpath avg =
-  let db = LevelDB.open_db dbpath in
-  let nb_read = ref 0 in
-  let variance = ref 0 in
-  Exn.protectx ~finally:LevelDB.close ~f:begin LevelDB.iter begin fun key data ->
-      let tick = Tick.Bytes.read' ~ts:Time_ns.epoch ~data () in
-      let v = Int63.to_int_exn tick.v in
-      variance := !variance + Int.pow (v - avg) 2;
-      incr nb_read;
-      Option.value_map max_ticks ~default:true ~f:(fun max_ticks -> not (!nb_read = max_ticks))
-    end
-  end db;
-  !variance
-
 let show tail max_ticks binsize (dbpath, show) () =
   let show = display_of_string show in
   let nb_read = ref 0 in
   let sum_p = ref 0 in
   let sum_v = ref 0 in
-  let sum_side = ref 0 in
+  let avg_v = ref 0 in
+  let var_v = ref 0 in
   let vdistrib = ref Int.Map.empty in
-  let iter_f = if tail then LevelDB.rev_iter else LevelDB.iter in
-  let db = LevelDB.open_db dbpath in
-  Exn.protectx
-    ~finally:LevelDB.close
-    ~f:begin iter_f begin fun ts data ->
-        let ts = Time_ns.of_int_ns_since_epoch @@ Binary_packing.unpack_signed_64_int_big_endian ~buf:ts ~pos:0 in
-        let tick = Tick.Bytes.read' ~ts ~data () in
-        if show = Rows then Format.printf "%d %a@." !nb_read Sexp.pp @@ Tick.sexp_of_t tick;
-        incr nb_read;
-        let p = Int63.to_int_exn tick.p in
-        let v = Int63.to_int_exn tick.v in
-        vdistrib := Int.Map.update !vdistrib (v / binsize) ~f:(function None -> 1 | Some n -> succ n);
-        sum_p := !sum_p + p;
-        sum_v := !sum_v + v;
-        sum_side := !sum_side + (match tick.side with Some Buy -> 1 | Some Sell -> -1 | None -> 0);
-        Option.value_map max_ticks ~default:true ~f:(fun max_ticks -> not (!nb_read = max_ticks))
+  let cur_cluster_size = ref 0 in
+  let nb_clusters = ref 0 in
+  let avg_cluster_size = ref 0. in
+  let var_nb_clusters = ref 0. in
+  let prev_side = ref Dtc_intf.Buy in
+  let ts_start = ref Time_ns.max_value in
+  let ts_stop = ref Time_ns.min_value in
+  let iter_f ts data =
+    let ts = Time_ns.of_int_ns_since_epoch @@ Binary_packing.unpack_signed_64_int_big_endian ~buf:ts ~pos:0 in
+    ts_start := Time_ns.min !ts_start ts;
+    ts_stop := Time_ns.max !ts_stop ts;
+    let tick = Tick.Bytes.read' ~ts ~data () in
+    if show = Rows then Format.printf "%d %a@." !nb_read Sexp.pp @@ Tick.sexp_of_t tick;
+    let p = Int63.to_int_exn tick.p in
+    let v = Int63.to_int_exn tick.v in
+    let side = Option.value_exn ~message:"side is undefined" tick.side in
+    incr nb_read;
+    vdistrib := Int.Map.update !vdistrib (v / binsize) ~f:(function None -> 1 | Some n -> succ n);
+    sum_p := !sum_p + p;
+    sum_v := !sum_v + v;
+    avg_v := !sum_v / !nb_read;
+    var_v := !var_v + Int.pow (v - !avg_v) 2;
+    if !nb_read > 0 then begin
+      if !prev_side <> side then begin
+        incr nb_clusters;
+        avg_cluster_size := !nb_read // !nb_clusters;
+        var_nb_clusters := !var_nb_clusters +. (Float.of_int !cur_cluster_size -. !avg_cluster_size) ** 2.;
+        cur_cluster_size := 0
       end
-    end
-    db;
+      else
+        incr cur_cluster_size
+    end;
+    prev_side := side;
+    Option.value_map max_ticks ~default:true ~f:(fun max_ticks -> not (!nb_read = max_ticks))
+  in
+  let iter_f = (if tail then LevelDB.rev_iter else LevelDB.iter) iter_f in
+  let db = LevelDB.open_db dbpath in
+  Exn.protectx ~f:iter_f db ~finally:LevelDB.close;
   match show with
   | Rows -> ()
   | Distrib -> Int.Map.iteri !vdistrib ~f:(fun ~key ~data -> Format.printf "%d %d@." (key * binsize) data)
   | Stats ->
     let avg_p = !sum_p / !nb_read in
     let avg_v = !sum_v / !nb_read in
-    let var_v = variance ?max_ticks dbpath avg_v in
-    let stddev_v = Float.(sqrt @@ of_int var_v /. of_int !nb_read) in
-    let stats = create_stats ~avg_p ~avg_v ~stddev_v () in
+    let stddev_v = Float.(sqrt @@ of_int !var_v /. of_int !nb_read) in
+    let stddev_cluster_size = Float.(sqrt @@ !var_nb_clusters /. of_int !nb_read) in
+    let stats = create_stats ~nb_records:!nb_read ~ts_start:!ts_start ~ts_stop:!ts_stop ~avg_p ~avg_v ~stddev_v ~avg_cluster_size:!avg_cluster_size ~stddev_cluster_size () in
     if show = Stats then Format.printf "%a@." Sexp.pp @@ sexp_of_stats stats
 
 let create offset scid db () =
