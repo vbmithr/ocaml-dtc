@@ -9,4 +9,5 @@ true: debug, bin_annot, warn(-40)
        package(scid), \
        package(leveldb), \
        package(ppx_sexp_conv), \
+       package(ppx_bin_prot), \
        thread

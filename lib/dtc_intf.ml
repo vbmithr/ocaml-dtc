@@ -196,7 +196,7 @@ end
 type side =
   | Buy [@value 1]
   | Sell
-[@@deriving show,enum,sexp]
+[@@deriving show,enum,sexp,bin_io]
 
 let other_side = function Buy -> Sell | Sell -> Buy
 

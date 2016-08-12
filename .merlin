@@ -10,3 +10,4 @@ PKG async
 PKG scid
 PKG leveldb
 PKG ppx_sexp_conv
+PKG ppx_bin_prot
