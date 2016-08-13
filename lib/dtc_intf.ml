@@ -1203,7 +1203,7 @@ module Trading = struct
             ?(exchange="")
             ?(srv_order_id="")
             ?(exec_id="")
-            ?buy_sell
+            ?side
             ?open_close
             ?(p=0.)
             ?(v=0.)
@@ -1217,7 +1217,7 @@ module Trading = struct
           set_cs_symbol (bytes_with_msg symbol Lengths.symbol) 0 cs;
           set_cs_exchange (bytes_with_msg exchange Lengths.exchange) 0 cs;
           set_cs_server_order_id (bytes_with_msg srv_order_id Lengths.order_id) 0 cs;
-          set_cs_buy_sell cs (option_to_enum side_to_enum buy_sell |> Int32.of_int_exn);
+          set_cs_buy_sell cs (option_to_enum side_to_enum side |> Int32.of_int_exn);
           set_cs_price cs @@ Int64.bits_of_float p;
           set_cs_qty cs @@ Int64.bits_of_float v;
           set_cs_ts cs @@ Int64.(ts / 1_000_000_000L);
