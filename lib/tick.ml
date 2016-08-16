@@ -1,11 +1,11 @@
 open Core.Std
 
 type t = {
+  ts: Time_ns.t;
+  side: Dtc_intf.side option;
   p: Int63.t;
   v: Int63.t;
-  side: Dtc_intf.side option;
-  ts: Time_ns.t
-} [@@deriving create,sexp]
+} [@@deriving create, sexp, bin_io]
 
 let compare t t' = compare t#p t'#p
 

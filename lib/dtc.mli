@@ -4,10 +4,10 @@ module Dtc : module type of Dtc_intf
 
 module Tick : sig
   type t = {
+    ts: Time_ns.t;
+    side: Dtc.side option;
     p: Int63.t;
     v: Int63.t;
-    side: Dtc.side option;
-    ts: Time_ns.t
   } [@@deriving create,sexp]
 
   module Bytes : sig
