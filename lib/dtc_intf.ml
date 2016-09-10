@@ -1257,17 +1257,16 @@ module Trading = struct
     module Update = struct
       include Trading.Position.Update
       let write
+          ?(request_id=0l)
           ?(trade_account="")
           ?(position_id="")
           ?(no_positions=false)
           ~nb_msgs
           ~msg_number
-          ?(request_id=0l)
           ?(symbol="")
           ?(exchange="")
           ?(p=0.)
           ?(v=0.)
-          ~unsolicited
           cs =
         set_cs_size cs sizeof_cs;
         set_cs__type cs @@ msg_to_enum PositionUpdate;
@@ -1281,7 +1280,7 @@ module Trading = struct
         set_cs_position_id (bytes_with_msg position_id 32) 0 cs;
         set_cs_trade_account (bytes_with_msg trade_account Lengths.trade_account) 0 cs;
         set_cs_no_positions cs @@ int_of_bool no_positions;
-        set_cs_unsolicited cs @@ int_of_bool unsolicited
+        set_cs_unsolicited cs @@ int_of_bool (request_id = 0l)
     end
   end
 end
@@ -1350,7 +1349,6 @@ module Account = struct
           ~nb_msgs
           ~msg_number
           ?(no_account_balance=false)
-          ~unsolicited
           cs =
         set_cs_size cs sizeof_cs;
         set_cs__type cs @@ msg_to_enum AccountBalanceUpdate;
@@ -1364,7 +1362,7 @@ module Account = struct
         set_cs_nb_msgs cs (Int32.of_int_exn nb_msgs);
         set_cs_msg_number cs (Int32.of_int_exn msg_number);
         set_cs_no_account_balances cs (int_of_bool no_account_balance);
-        set_cs_unsolicited cs (int_of_bool unsolicited)
+        set_cs_unsolicited cs (int_of_bool (request_id = 0l))
     end
   end
 end
