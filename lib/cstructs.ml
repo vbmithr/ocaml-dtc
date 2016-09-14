@@ -602,6 +602,8 @@ module Trading = struct
           } [@@little_endian]]
       end
 
+      module Reject = RejectRequest
+
       module Response = struct
         [%%cstruct type cs = {
             size: uint16_t;

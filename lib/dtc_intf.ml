@@ -95,6 +95,7 @@ type msg =
 
   | HistoricalOrderFillsRequest [@value 303]
   | HistoricalOrderFillResponse
+  | HistoricalOrderFillReject [@value 308]
 
   | CurrentPositionsRequest [@value 305]
   | CurrentPositionsReject [@value 307]
@@ -1189,6 +1190,17 @@ module Trading = struct
           let nb_of_days = get_cs_number_of_days cs |> Int32.to_int_exn in
           let trade_account = get_cs_trade_account cs |> cstring_of_cstruct in
           create ~id ~srv_order_id ~nb_of_days ~trade_account ()
+      end
+
+      module Reject = struct
+        include Trading.Order.Fills.Reject
+        let write cs request_id k =
+          Printf.ksprintf (fun reason ->
+              set_cs_size cs sizeof_cs;
+              set_cs__type cs @@ msg_to_enum HistoricalOrderFillReject;
+              set_cs_request_id cs request_id;
+              set_cs_reason (bytes_with_msg reason Lengths.text_description) 0 cs
+            ) k
       end
 
       module Response = struct
