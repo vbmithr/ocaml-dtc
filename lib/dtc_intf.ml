@@ -1,4 +1,4 @@
-open Core_kernel.Std
+open Core.Std
 
 let int_of_bool = function
   | false -> 0
@@ -7,6 +7,30 @@ let int_of_bool = function
 let bool_of_int = function
   | 0 -> false
   | _ -> true
+
+let datetime64_of_ts ts =
+  let ts = Time_ns.to_int63_ns_since_epoch ts in
+  Int64.(Int63.to_int64 ts / 1_000_000_000L)
+
+let datetimeMs_of_ts ts =
+  let ts = Time_ns.to_int63_ns_since_epoch ts in
+  Int64.(Int63.to_int64 ts // 1_000_000_000L)
+
+let datetime32_of_ts ts =
+  let ts = Time_ns.to_int63_ns_since_epoch ts in
+  let ts = Int64.(Int63.to_int64 ts / 1_000_000_000L) in
+  Int32.of_int64_exn ts
+
+let ts_of_datetime64 dt =
+  Int64.(dt * 1_000_000_000L) |> Int63.of_int64_exn |> Time_ns.of_int63_ns_since_epoch
+
+let ts_of_datetime32 dt =
+  let dt = Int32.to_int64 dt in
+  Int64.(dt * 1_000_000_000L) |> Int63.of_int64_exn |> Time_ns.of_int63_ns_since_epoch
+
+let ts_of_datetimeMs dt =
+  let ts = Int63.of_float @@ dt *. 1e9 in
+  Time_ns.of_int63_ns_since_epoch ts
 
 let current_version = 7
 
@@ -435,11 +459,11 @@ module Logon = struct
         ts = Int64.(get_cs_timestamp cs * 1_000_000_000L)
       }
 
-    let write ?(dropped_msgs=0) ?(ts=0L) cs =
+    let write ?(dropped_msgs=0) ?(ts=Time_ns.epoch) cs =
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum Heartbeat);
       set_cs_dropped_messages cs (Int32.of_int_exn dropped_msgs);
-      set_cs_timestamp cs Int64.(ts / 1_000_000_000L)
+      set_cs_timestamp cs (datetime64_of_ts ts)
   end
 
   module Logoff = struct
@@ -503,10 +527,10 @@ module MarketData = struct
       ask_qty: float [@default Float.max_finite_value];
       last_trade_p: float [@default Float.max_finite_value];
       last_trade_v: float [@default Float.max_finite_value];
-      last_trade_ts: float [@default 0.]; (* UNIX ts with ms. *)
-      bid_ask_ts: float [@default 0.]; (* UNIX ts with ms. *)
-      session_settlement_ts: int32 [@default 0l] (* UNIX ts in seconds *);
-      trading_session_ts: int32 [@default 0l] (* UNIX ts in seconds *);
+      last_trade_ts: Time_ns.t [@default Time_ns.epoch]; (* UNIX ts with ms. *)
+      bid_ask_ts: Time_ns.t [@default Time_ns.epoch]; (* UNIX ts with ms. *)
+      session_settlement_ts: Time_ns.t [@default Time_ns.epoch] (* UNIX ts in seconds *);
+      trading_session_ts: Time_ns.t [@default Time_ns.epoch] (* UNIX ts in seconds *);
     } [@@deriving show,create]
 
     let to_cstruct cs t =
@@ -526,8 +550,10 @@ module MarketData = struct
       set_cs_ask_qty cs @@ Int64.bits_of_float t.ask_qty;
       set_cs_last_trade_price cs @@ Int64.bits_of_float t.last_trade_p;
       set_cs_last_trade_volume cs @@ Int64.bits_of_float t.last_trade_v;
-      set_cs_last_trade_ts cs @@ Int64.bits_of_float t.last_trade_ts;
-      set_cs_bid_ask_ts cs @@ Int64.bits_of_float t.bid_ask_ts
+      set_cs_last_trade_ts cs @@ datetime64_of_ts t.last_trade_ts;
+      set_cs_bid_ask_ts cs @@ datetime64_of_ts t.bid_ask_ts;
+      set_cs_session_settlement_ts cs @@ datetime32_of_ts t.session_settlement_ts;
+      set_cs_trading_session_ts cs @@ datetime32_of_ts t.trading_session_ts
   end
 
   module UpdateTrade = struct
@@ -537,7 +563,7 @@ module MarketData = struct
       side: side option;
       p: float;
       v: float;
-      ts: float;
+      ts: Time_ns.t;
     } [@@deriving show,create]
 
     let to_cstruct cs t =
@@ -547,7 +573,7 @@ module MarketData = struct
       set_cs_at_bid_or_ask cs @@ option_to_enum side_to_enum @@ Option.map ~f:other_side t.side;
       set_cs_p cs @@ Int64.bits_of_float t.p;
       set_cs_v cs @@ Int64.bits_of_float t.v;
-      set_cs_ts cs @@ Int64.bits_of_float t.ts
+      set_cs_ts cs @@ Int64.bits_of_float @@ datetimeMs_of_ts t.ts
 
     let update_cstruct ~symbol_id cs = set_cs_symbol_id cs symbol_id
 
@@ -558,7 +584,7 @@ module MarketData = struct
       set_cs_at_bid_or_ask cs @@ option_to_enum side_to_enum @@ Option.map ~f:other_side side;
       set_cs_p cs @@ Int64.bits_of_float p;
       set_cs_v cs @@ Int64.bits_of_float v;
-      set_cs_ts cs @@ Int64.bits_of_float ts
+      set_cs_ts cs @@ Int64.bits_of_float @@ datetimeMs_of_ts ts
   end
 
   module UpdateBidAsk = struct
@@ -572,7 +598,7 @@ module MarketData = struct
       set_cs_bid_qty cs @@ Int32.bits_of_float bid_qty;
       set_cs_ask_price cs @@ Int64.bits_of_float ask;
       set_cs_ask_qty cs @@ Int32.bits_of_float ask_qty;
-      set_cs_ts cs ts
+      set_cs_ts cs @@ datetime32_of_ts ts
   end
 
   module UpdateSession = struct
@@ -821,8 +847,8 @@ module HistoricalPriceData = struct
       symbol: string;
       exchange: string;
       record_interval: int [@default 0];
-      start_ts: int64 [@default 0L]; (* in seconds *)
-      end_ts: int64 [@default 0L]; (* in seconds *)
+      start_ts: Time_ns.t [@default Time_ns.epoch]; (* in seconds *)
+      end_ts: Time_ns.t [@default Time_ns.epoch]; (* in seconds *)
       max_days: int [@default 0];
       zlib: bool [@default false];
       request_dividend_adjusted_stock_data: bool [@default false];
@@ -835,8 +861,8 @@ module HistoricalPriceData = struct
         ~symbol:(get_cs_symbol cs |> cstring_of_cstruct)
         ~exchange:(get_cs_exchange cs |> cstring_of_cstruct)
         ~record_interval:(get_cs_record_interval cs |> Int32.to_int_exn)
-        ~start_ts:(get_cs_start_ts cs)
-        ~end_ts:(get_cs_end_ts cs)
+        ~start_ts:(ts_of_datetime64 @@ get_cs_start_ts cs)
+        ~end_ts:(ts_of_datetime64 @@ get_cs_end_ts cs)
         ~max_days:(get_cs_max_days cs |> Int32.to_int_exn)
         ~zlib:(get_cs_zlib cs |> bool_of_int)
         ~request_dividend_adjusted_stock_data:(
@@ -850,8 +876,8 @@ module HistoricalPriceData = struct
       set_cs_symbol (bytes_with_msg t.symbol Lengths.symbol) 0 cs;
       set_cs_exchange (bytes_with_msg t.exchange Lengths.exchange) 0 cs;
       set_cs_record_interval cs (t.record_interval |> Int32.of_int_exn);
-      set_cs_start_ts cs t.start_ts;
-      set_cs_end_ts cs t.end_ts;
+      set_cs_start_ts cs @@ datetime64_of_ts t.start_ts;
+      set_cs_end_ts cs @@ datetime64_of_ts t.end_ts;
       set_cs_max_days cs (t.max_days |> Int32.of_int_exn);
       set_cs_zlib cs (int_of_bool t.zlib);
       set_cs_request_dividend_adjusted_stock_data cs
@@ -894,7 +920,7 @@ module HistoricalPriceData = struct
     include HistoricalPriceData.Record
     type t = {
       request_id: int32;
-      start_ts: int64 [@default 0L];
+      start_ts: Time_ns.t [@default Time_ns.epoch];
       o: float [@default 0.];
       h: float [@default 0.];
       l: float [@default 0.];
@@ -910,7 +936,7 @@ module HistoricalPriceData = struct
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum HistoricalPriceDataRecordResponse);
       set_cs_request_id cs t.request_id;
-      set_cs_start cs Int64.(t.start_ts / 1_000_000_000L);
+      set_cs_start cs @@ datetime64_of_ts t.start_ts;
       set_cs_o cs (Int64.bits_of_float t.o);
       set_cs_h cs (Int64.bits_of_float t.h);
       set_cs_l cs (Int64.bits_of_float t.l);
@@ -929,7 +955,7 @@ module HistoricalPriceData = struct
       set_cs_size cs sizeof_cs;
       set_cs__type cs (msg_to_enum HistoricalPriceDataTickRecordResponse);
       set_cs_request_id cs request_id;
-      set_cs_timestamp cs (Int64.bits_of_float @@ Int64.to_float ts /. 1e9);
+      set_cs_timestamp cs @@ Int64.bits_of_float @@ datetimeMs_of_ts ts;
       set_cs_side cs (option_to_enum side_to_enum side);
       set_cs_price cs @@ Int64.bits_of_float p;
       set_cs_volume cs @@ Int64.bits_of_float v;
@@ -953,7 +979,7 @@ module Trading = struct
         p2: float;
         qty: float;
         tif: TimeInForce.t option;
-        good_till_ts: int64; (* UNIX time in seconds. *)
+        good_till_ts: Time_ns.t [@default Time_ns.epoch]; (* UNIX time in seconds. *)
         automated: bool;
         parent: bool;
         text: string;
@@ -972,7 +998,7 @@ module Trading = struct
           ~p2:Int64.(float_of_bits @@ get_cs_price2 cs)
           ~qty:Int64.(float_of_bits @@ get_cs_qty cs)
           ?tif:(get_cs_tif cs |> Int32.to_int_exn |> TimeInForce.of_enum)
-          ~good_till_ts:(get_cs_good_till_ts cs)
+          ~good_till_ts:(ts_of_datetime64 @@ get_cs_good_till_ts cs)
           ~automated:(get_cs_automated cs |> bool_of_int)
           ~parent:(get_cs_parent cs |> bool_of_int)
           ~text:(get_cs_text cs |> cstring_of_cstruct)
@@ -998,7 +1024,7 @@ module Trading = struct
         p2_2: float;
         qty_2: float;
         tif: TimeInForce.t option;
-        good_till_ts: int64; (* UNIX time in seconds. *)
+        good_till_ts: Time_ns.t [@default Time_ns.epoch]; (* UNIX time in seconds. *)
         open_close: open_or_close option;
         partial_fill_handling:partial_fill option;
         automated: bool;
@@ -1024,7 +1050,7 @@ module Trading = struct
           ~p2_2:Int64.(float_of_bits @@ get_cs_price2_2 cs)
           ~qty_2:Int64.(float_of_bits @@ get_cs_qty_2 cs)
           ?tif:(get_cs_tif cs |> Int32.to_int_exn |> TimeInForce.of_enum)
-          ~good_till_ts:(get_cs_good_till_ts cs)
+          ~good_till_ts:(ts_of_datetime64 @@ get_cs_good_till_ts cs)
           ?open_close:(get_cs_open_or_close cs |> Int32.to_int_exn |> open_or_close_of_enum)
           ?partial_fill_handling:(get_cs_partial_fill_handling cs |> partial_fill_of_enum)
           ~automated:(get_cs_automated cs |> bool_of_int)
@@ -1045,7 +1071,7 @@ module Trading = struct
         p2_set: bool;
         ord_type: OrderType.t option;
         tif: TimeInForce.t option;
-        good_till_ts: int64;
+        good_till_ts: Time_ns.t [@default Time_ns.epoch];
       } [@@deriving show,create]
 
       let read cs =
@@ -1059,7 +1085,7 @@ module Trading = struct
           ~p2_set:(get_cs_price2_set cs |> bool_of_int)
           ?ord_type:(get_cs_order_type cs |> Int32.to_int_exn |> OrderType.of_enum)
           ?tif:(get_cs_tif cs |> Int32.to_int_exn |> TimeInForce.of_enum)
-          ~good_till_ts:(get_cs_good_till_ts cs)
+          ~good_till_ts:(ts_of_datetime64 @@ get_cs_good_till_ts cs)
           ()
     end
 
@@ -1097,13 +1123,13 @@ module Trading = struct
           ?(p1=Float.max_finite_value)
           ?(p2=Float.max_finite_value)
           ?tif
-          ?(good_till_ts=0L)
+          ?(good_till_ts=Time_ns.epoch)
           ?(order_qty=Float.max_finite_value)
           ?(filled_qty=Float.max_finite_value)
           ?(remaining_qty=Float.max_finite_value)
           ?(avg_fill_p=Float.max_finite_value)
           ?(last_fill_p=Float.max_finite_value)
-          ?(last_fill_ts=0L)
+          ?(last_fill_ts=Time_ns.epoch)
           ?(last_fill_qty=Float.max_finite_value)
           ?(last_fill_exec_id="")
           ?(trade_account="")
@@ -1114,7 +1140,7 @@ module Trading = struct
           ?open_or_close
           ?(previous_client_order_id="")
           ?(free_form_text="")
-          ?(received_ts=0L)
+          ?(received_ts=Time_ns.epoch)
           cs =
         set_cs_size cs sizeof_cs;
         set_cs__type cs (msg_to_enum OrderUpdate);
@@ -1135,14 +1161,14 @@ module Trading = struct
         set_cs_price1 cs @@ Int64.bits_of_float p1;
         set_cs_price2 cs @@ Int64.bits_of_float p2;
         set_cs_tif cs (option_to_enum TimeInForce.to_enum tif |> Int32.of_int_exn);
-        set_cs_good_till_ts cs good_till_ts;
+        set_cs_good_till_ts cs @@ datetime64_of_ts good_till_ts;
         set_cs_order_qty cs @@ Int64.bits_of_float order_qty;
         set_cs_filled_qty cs @@ Int64.bits_of_float filled_qty;
         set_cs_remaining_qty cs @@ Int64.bits_of_float remaining_qty;
         set_cs_avgfillprice cs @@ Int64.bits_of_float avg_fill_p;
         set_cs_lastfillprice cs @@ Int64.bits_of_float last_fill_p;
         set_cs_lastfillqty cs @@ Int64.bits_of_float last_fill_qty;
-        set_cs_lastfilldatetime cs last_fill_ts;
+        set_cs_lastfilldatetime cs @@ datetime64_of_ts last_fill_ts;
         set_cs_no_orders cs @@ int_of_bool no_orders;
         set_cs_lastfillexecution_id (bytes_with_msg last_fill_exec_id 64) 0 cs;
         set_cs_trade_account (bytes_with_msg trade_account 32) 0 cs;
@@ -1152,7 +1178,7 @@ module Trading = struct
         set_cs_open_or_close cs (option_to_enum open_or_close_to_enum open_or_close |> Int32.of_int_exn);
         set_cs_previous_client_order_id (bytes_with_msg previous_client_order_id 32) 0 cs;
         set_cs_free_form_text (bytes_with_msg info_text 48) 0 cs;
-        set_cs_received_ts cs last_fill_ts
+        set_cs_received_ts cs @@ datetime64_of_ts last_fill_ts
     end
 
     module Open = struct
@@ -1219,7 +1245,7 @@ module Trading = struct
             ?open_close
             ?(p=0.)
             ?(v=0.)
-            ?(ts=0L)
+            ?(ts=Time_ns.epoch)
             cs =
           set_cs_size cs sizeof_cs;
           set_cs__type cs @@ msg_to_enum HistoricalOrderFillResponse;
@@ -1232,7 +1258,7 @@ module Trading = struct
           set_cs_buy_sell cs (option_to_enum side_to_enum side |> Int32.of_int_exn);
           set_cs_price cs @@ Int64.bits_of_float p;
           set_cs_qty cs @@ Int64.bits_of_float v;
-          set_cs_ts cs @@ Int64.(ts / 1_000_000_000L);
+          set_cs_ts cs @@ datetime64_of_ts ts;
           set_cs_unique_exec_id (bytes_with_msg exec_id 64) 0 cs;
           set_cs_trade_account (bytes_with_msg trade_account Lengths.trade_account) 0 cs;
           set_cs_open_close cs (option_to_enum open_or_close_to_enum open_close |> Int32.of_int_exn);
