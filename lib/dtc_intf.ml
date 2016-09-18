@@ -161,7 +161,8 @@ type msg =
   | HistoricalPriceDataTickRecordResponse
   | HistoricalPriceDataRecordResponseInt
   | HistoricalPriceDataTickRecordResponseInt
-      [@@deriving show,enum]
+  | HistoricalPriceDataResponseTrailer
+[@@deriving show,enum]
 
 module LogonStatus = struct
   type t =
