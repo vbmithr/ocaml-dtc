@@ -162,7 +162,7 @@ type msg =
   | HistoricalPriceDataRecordResponseInt
   | HistoricalPriceDataTickRecordResponseInt
   | HistoricalPriceDataResponseTrailer
-[@@deriving show,enum]
+[@@deriving show,sexp,enum]
 
 module LogonStatus = struct
   type t =
@@ -170,7 +170,7 @@ module LogonStatus = struct
     | Error
     | Error_no_reconnect
     | Reconnect_new_address
-  [@@deriving show,enum]
+  [@@deriving show,sexp,enum]
 end
 
 module TradeMode = struct
@@ -178,7 +178,7 @@ module TradeMode = struct
     | Demo [@value 1]
     | Simulated
     | Live
-  [@@deriving show,enum]
+  [@@deriving show,sexp,enum]
 end
 
 module RequestAction = struct
@@ -186,7 +186,7 @@ module RequestAction = struct
     | Subscribe [@value 1]
     | Unsubscribe
     | Snapshot
-  [@@deriving show,enum]
+  [@@deriving show,sexp,enum]
 end
 
 module OrderStatus = struct
@@ -201,7 +201,7 @@ module OrderStatus = struct
     | Canceled
     | Rejected
     | Partially_filled
-  [@@deriving show,enum]
+  [@@deriving show,sexp,enum]
 end
 
 module UpdateReason = struct
@@ -216,30 +216,30 @@ module UpdateReason = struct
     | New_order_rejected
     | Cancel_rejected
     | Cancel_replace_rejected
-  [@@deriving show,enum]
+  [@@deriving show,sexp,enum]
 end
 
 type side =
   | Buy [@value 1]
   | Sell
-[@@deriving show,enum,sexp,bin_io]
+[@@deriving show,sexp,enum,sexp,bin_io]
 
 let other_side = function Buy -> Sell | Sell -> Buy
 
 type put_or_call =
   | Call [@value 1]
   | Put
-[@@deriving show,enum]
+[@@deriving show,sexp,enum]
 
 type open_or_close =
   | Open [@value 1]
   | Close
-[@@deriving show,enum]
+[@@deriving show,sexp,enum]
 
 type market_depth_update_type = [
   | `Insert_update [@value 1]
   | `Delete
-] [@@deriving show,enum]
+] [@@deriving show,sexp,enum]
 
 module OrderType = struct
   type t =
@@ -248,7 +248,7 @@ module OrderType = struct
     | Stop
     | Stop_limit
     | Market_if_touched
-  [@@deriving show,enum]
+  [@@deriving show,sexp,enum]
 end
 
 module TimeInForce = struct
@@ -259,13 +259,13 @@ module TimeInForce = struct
     | Immediate_or_cancel
     | All_or_none
     | Fill_or_kill
-  [@@deriving show,enum]
+  [@@deriving show,sexp,enum]
 end
 
 type partial_fill = [
   | `Reduce_quantity [@value 1]
   | `Immediate_cancel
-] [@@deriving show, enum]
+] [@@deriving show,sexp, enum]
 
 type price_display_format =
   | Decimal_0 [@value 0]
@@ -288,7 +288,7 @@ type price_display_format =
   | Denominator_8 [@value 108]
   | Denominator_4 [@value 104]
   | Denominator_2 [@value 102]
-[@@deriving show,enum]
+[@@deriving show,sexp,enum]
 
 type encoding =
   | Binary
@@ -296,7 +296,7 @@ type encoding =
   | Json
   | Json_compact
   | Protobuf
-  [@@deriving show, enum]
+  [@@deriving show,sexp, enum]
 
 let price_display_format_of_ticksize tickSize =
   if tickSize >=. 1. then Decimal_0
@@ -322,7 +322,7 @@ type security =
   | Index_option
   | Bond
   | Mutual_fund
-[@@deriving show,enum]
+[@@deriving show,sexp,enum]
 
 let option_to_enum to_enum_f = function
   | None -> 0
@@ -381,7 +381,7 @@ module Logon = struct
       trade_account: string;
       hardware_id: string;
       client_name: string;
-    } [@@deriving show,create]
+    } [@@deriving show,sexp,create]
 
     let read cs =
       create
@@ -421,7 +421,7 @@ module Logon = struct
       use_integer_price_order_messages: bool [@default false];
       multiple_positions_per_symbol_and_trade_account: bool [@default false];
       market_data_supported: bool [@default false];
-    } [@@deriving show,create]
+    } [@@deriving show,sexp,create]
 
     let to_cstruct cs t =
       set_cs_size cs sizeof_cs;
@@ -453,7 +453,7 @@ module Logon = struct
     type t = {
       dropped_msgs: (int [@default 0]);
       ts: (int64 [@default 0L]);
-    } [@@deriving show,create]
+    } [@@deriving show,sexp,create]
 
     let read cs =
       { dropped_msgs = get_cs_dropped_messages cs |> Int32.to_int_exn;
@@ -487,7 +487,7 @@ module MarketData = struct
       symbol_id: int;
       symbol: string;
       exchange: string;
-    } [@@deriving show,create]
+    } [@@deriving show,sexp,create]
 
     let read cs =
       let action = Option.value_exn ~message:"RequestAction.of_enum"
@@ -532,7 +532,7 @@ module MarketData = struct
       bid_ask_ts: Time_ns.t [@default Time_ns.epoch]; (* UNIX ts with ms. *)
       session_settlement_ts: Time_ns.t [@default Time_ns.epoch] (* UNIX ts in seconds *);
       trading_session_ts: Time_ns.t [@default Time_ns.epoch] (* UNIX ts in seconds *);
-    } [@@deriving show,create]
+    } [@@deriving show,sexp,create]
 
     let to_cstruct cs t =
       set_cs_size cs sizeof_cs;
@@ -565,7 +565,7 @@ module MarketData = struct
       p: float;
       v: float;
       ts: Time_ns.t;
-    } [@@deriving show,create]
+    } [@@deriving show,sexp,create]
 
     let to_cstruct cs t =
       set_cs_size cs sizeof_cs;
@@ -608,7 +608,7 @@ module MarketData = struct
       kind: [`Open | `High | `Low | `Volume | `Settlement];
       symbol_id: int;
       data: float;
-    } [@@deriving show,create]
+    } [@@deriving show,sexp,create]
 
     let kind_to_msg = function
       | `Open -> MarketDataUpdateSessionOpen
@@ -662,7 +662,7 @@ module MarketDepth = struct
       symbol: string;
       exchange: string;
       nb_levels: int;
-    } [@@deriving show,create]
+    } [@@deriving show,sexp,create]
 
     let read cs =
       let action = Option.value_exn ~message:"MarketDepth.RequestAction.of_enum"
@@ -696,7 +696,7 @@ module MarketDepth = struct
       level: int;
       first: bool;
       last: bool;
-    } [@@deriving show,create]
+    } [@@deriving show,sexp,create]
 
     let to_cstruct cs t =
       set_cs_size cs sizeof_cs;
@@ -729,7 +729,7 @@ module MarketDepth = struct
       p: float [@default 0.];
       v: float [@default 0.];
       op: market_depth_update_type option;
-    } [@@deriving show,create]
+    } [@@deriving show,sexp,create]
 
     let to_cstruct cs t =
       set_cs_size cs sizeof_cs;
@@ -758,7 +758,7 @@ module SecurityDefinition = struct
       id: int32;
       symbol: string;
       exchange: string;
-    } [@@deriving show,create]
+    } [@@deriving show,sexp,create]
 
     let read cs =
       create
@@ -806,7 +806,7 @@ module SecurityDefinition = struct
       qty_divisor: float [@default 0.];
       has_market_depth_data: bool [@default false];
       display_price_multiplier: float [@default 0.];
-    } [@@deriving show,create]
+    } [@@deriving show,sexp,create]
 
     let to_cstruct cs t =
       set_cs_size cs sizeof_cs;
@@ -854,7 +854,7 @@ module HistoricalPriceData = struct
       zlib: bool [@default false];
       request_dividend_adjusted_stock_data: bool [@default false];
       flag1: int [@default 0];
-    } [@@deriving show,create]
+    } [@@deriving show,sexp,create]
 
     let read cs =
       create
@@ -905,7 +905,7 @@ module HistoricalPriceData = struct
       zlib: bool [@default false];
       empty: bool [@default false];
       int_price_divisor: float;
-    } [@@deriving show,create]
+    } [@@deriving show,sexp,create]
 
     let to_cstruct cs t =
       set_cs_size cs sizeof_cs;
@@ -931,7 +931,7 @@ module HistoricalPriceData = struct
       bid_v: float [@default 0.];
       ask_v: float [@default 0.];
       final: bool [@default false];
-    } [@@deriving show,create]
+    } [@@deriving show,sexp,create]
 
     let to_cstruct cs t =
       set_cs_size cs sizeof_cs;
@@ -984,7 +984,7 @@ module Trading = struct
         automated: bool;
         parent: bool;
         text: string;
-      } [@@deriving show,create]
+      } [@@deriving show,sexp,create]
 
       let read cs =
         create
@@ -1031,7 +1031,7 @@ module Trading = struct
         automated: bool;
         parent: string;
         text: string;
-      } [@@deriving show,create]
+      } [@@deriving show,sexp,create]
 
       let read cs =
         create
@@ -1073,7 +1073,7 @@ module Trading = struct
         ord_type: OrderType.t option;
         tif: TimeInForce.t option;
         good_till_ts: Time_ns.t [@default Time_ns.epoch];
-      } [@@deriving show,create]
+      } [@@deriving show,sexp,create]
 
       let read cs =
         create
@@ -1095,7 +1095,7 @@ module Trading = struct
       type t = {
         srv_ord_id: string;
         cli_ord_id: string;
-      } [@@deriving show,create]
+      } [@@deriving show,sexp,create]
 
       let read cs =
         create
@@ -1188,7 +1188,7 @@ module Trading = struct
         type t = {
           id: int32;
           orders: [`All | `One of string]
-        } [@@deriving show,create]
+        } [@@deriving show,sexp,create]
 
         let read cs =
           let id = get_cs_request_id cs in
@@ -1209,7 +1209,7 @@ module Trading = struct
           srv_order_id: string;
           nb_of_days: int;
           trade_account: string;
-        } [@@deriving show,create]
+        } [@@deriving show,sexp,create]
 
         let read cs =
           let id = get_cs_request_id cs in
@@ -1274,7 +1274,7 @@ module Trading = struct
       type t = {
         id: int32;
         trade_account: string;
-      } [@@deriving show,create]
+      } [@@deriving show,sexp,create]
 
       let read cs =
         let id = get_cs_request_id cs in
