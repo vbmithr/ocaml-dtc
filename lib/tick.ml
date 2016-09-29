@@ -139,6 +139,14 @@ module LevelDB_ext = struct
     Bytes.write ~buf_key:key ~buf_data:data t;
     LevelDB.put ?sync db key data
 
+  let put_ticks ?sync db ts =
+    let batch = LevelDB.Batch.make () in
+    List.iter ts ~f:begin fun t ->
+      Bytes.write ~buf_key:key ~buf_data:data t;
+      LevelDB.Batch.put batch key data
+    end;
+    LevelDB.Batch.write ?sync db batch
+
   let get_tick db ts =
     let open Option.Monad_infix in
     Binary_packing.pack_signed_64_big_endian key 0 ts;
