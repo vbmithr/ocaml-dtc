@@ -139,6 +139,10 @@ module LevelDB_ext = struct
     Bytes.write ~buf_key:key ~buf_data:data t;
     LevelDB.put ?sync db key data
 
+  let put_tick_batch batch t =
+    Bytes.write ~buf_key:key ~buf_data:data t;
+    LevelDB.Batch.put batch key data
+
   let put_ticks ?sync db ts =
     let batch = LevelDB.Batch.make () in
     List.iter ts ~f:begin fun t ->
