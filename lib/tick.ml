@@ -46,10 +46,10 @@ end
 module TickIO (IO: IO) = struct
   open IO
 
-  let write b ?(pos=0) { p; v; side; ts } =
-    set_int64_be b pos @@ Int63.to_int64 @@ Time_ns.to_int63_ns_since_epoch ts;
-    set_int64_le b (pos+8) @@ Int63.to_int64 p;
-    set_int64_le b (pos+16) @@ int64_of_v_side v side
+  let write ?(key_pos=0) ?(data_pos=0) ~buf_key ~buf_data { p; v; side; ts } =
+    set_int64_be buf_key key_pos @@ Int63.to_int64 @@ Time_ns.to_int63_ns_since_epoch ts;
+    set_int64_le buf_data data_pos @@ Int63.to_int64 p;
+    set_int64_le buf_data (data_pos+8) @@ int64_of_v_side v side
 
   let read ?(pos=0) b =
     let ts = get_int64_be b pos |> Int63.of_int64_exn |> Time_ns.of_int63_ns_since_epoch in
@@ -106,6 +106,9 @@ let of_scid_record r =
     ~v:(Int63.(of_int64_exn r.Scid.R.total_volume * of_int 10_000))
     ~side:(if r.Scid.R.bid_volume = 0L then Buy else Sell) ()
 
+let key = B.create 8
+let data = B.create 16
+
 module LevelDB_ext = struct
   let length db =
     let cnt = ref 0 in
@@ -129,22 +132,19 @@ module LevelDB_ext = struct
             Bytes.read max_elt)
 
   let mem_tick db t =
-    let buf = B.create 8 in
-    Binary_packing.pack_signed_64_big_endian buf 0 (Time_ns.to_int63_ns_since_epoch t.ts |> Int63.to_int64);
-    LevelDB.mem db buf
+    Binary_packing.pack_signed_64_big_endian key 0 (Time_ns.to_int63_ns_since_epoch t.ts |> Int63.to_int64);
+    LevelDB.mem db key
 
   let put_tick ?sync db t =
-    let buf = B.create size in
-    Bytes.write buf t;
-    LevelDB.put ?sync db (String.sub buf 0 8) (String.sub buf 8 16)
+    Bytes.write ~buf_key:key ~buf_data:data t;
+    LevelDB.put ?sync db key data
 
   let get_tick db ts =
     let open Option.Monad_infix in
-    let buf = String.create size in
-    Binary_packing.pack_signed_64_big_endian buf 0 ts;
-    LevelDB.get db (String.sub buf 0 8) >>| fun v ->
-    String.blit v 0 buf 8 16;
-    Bytes.read buf
+    Binary_packing.pack_signed_64_big_endian key 0 ts;
+    LevelDB.get db key >>| fun data ->
+    let ts = Int63.of_int64_exn ts |> Time_ns.of_int63_ns_since_epoch in
+    Bytes.read' ~ts ~data ()
 end
 
 module File = struct
@@ -155,7 +155,7 @@ module File = struct
     let rec loop nb_records = match D.decode d with
       | `R r ->
         let t = of_scid_record r in
-        Bytes.write buf t;
+        Bytes.write ~buf_key:key ~buf_data:data t;
         Out_channel.output oc buf 0 size;
         loop (succ nb_records)
       | `End -> nb_records
@@ -222,7 +222,7 @@ module File = struct
           | `R r ->
             let t = of_scid_record r in
             if Time_ns.(t.ts > offset) then begin
-              Bytes.write buf t;
+              Bytes.write ~buf_key:key ~buf_data:data t;
               LevelDB.put db (String.sub buf 0 8) (String.sub buf 8 16);
               loop @@ succ nb_records
             end

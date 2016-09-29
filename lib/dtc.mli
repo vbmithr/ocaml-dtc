@@ -11,13 +11,13 @@ module Tick : sig
   } [@@deriving create,sexp]
 
   module Bytes : sig
-    val write : Bytes.t -> ?pos:int -> t -> unit
+    val write : ?key_pos:int -> ?data_pos:int -> buf_key:Bytes.t -> buf_data:Bytes.t -> t -> unit
     val read : ?pos:int -> Bytes.t -> t
     val read' : ?pos:int -> ts:Time_ns.t -> data:Bytes.t -> unit -> t
   end
 
   module Bigstring : sig
-    val write : Bigstring.t -> ?pos:int -> t -> unit
+    val write : ?key_pos:int -> ?data_pos:int -> buf_key:Bigstring.t -> buf_data:Bigstring.t -> t -> unit
     val read : ?pos:int -> Bigstring.t -> t
     val read' : ?pos:int -> ts:Time_ns.t -> data:Bigstring.t -> unit -> t
   end
