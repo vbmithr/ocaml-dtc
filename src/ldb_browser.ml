@@ -1,5 +1,7 @@
 open Core.Std
 
+module LevelDB = Tick.MakeLDB(LevelDB)
+
 type stats = {
   nb_records: int;
   ts_start: Time_ns.t;
@@ -84,7 +86,7 @@ let create offset scid db () =
   let nb_records =
     Exn.protectx
       ~finally:LevelDB.close
-      ~f:(fun db -> Tick.File.leveldb_of_scid ?offset db scid)
+      ~f:(fun db -> Tick.File.db_of_scid (module LevelDB) ?offset db scid)
       db
   in
   Printf.printf "%d record written.\n" nb_records

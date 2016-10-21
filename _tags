@@ -3,11 +3,12 @@ true: debug, bin_annot, warn(-40)
 <lib>: include
 <src>: include
 
-<*/*>: package(core), \
-       package(cstruct.ppx), \
-       package(ppx_deriving.std), \
-       package(scid), \
-       package(leveldb), \
-       package(ppx_sexp_conv), \
-       package(ppx_bin_prot), \
-       thread
+<**/*>: package(core), \
+        package(cstruct.ppx), \
+        package(ppx_deriving.std), \
+        package(scid), \
+        package(ppx_sexp_conv), \
+        package(ppx_bin_prot), \
+        thread
+
+<src/*>: package(leveldb)

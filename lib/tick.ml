@@ -109,10 +109,62 @@ let of_scid_record r =
 let key = B.create 8
 let data = B.create 16
 
-module LevelDB_ext = struct
+module type LDB = sig
+  exception Error of string
+  type db
+  type writebatch
+  type comparator
+  type env
+  val destroy : string -> bool
+  val repair : string -> bool
+  val default_env : env
+  val lexicographic_comparator : comparator
+  val open_db :
+    ?write_buffer_size:int ->
+    ?max_open_files:int ->
+    ?block_size:int ->
+    ?block_restart_interval:int ->
+    ?comparator:comparator -> ?cache_size:int -> ?env:env -> string -> db
+  val close : db -> unit
+  val get : db -> string -> string option
+  val get_exn : db -> string -> string
+  val mem : db -> string -> bool
+  val put : db -> ?sync:bool -> string -> string -> unit
+  val delete : db -> ?sync:bool -> string -> unit
+  val iter : (string -> string -> bool) -> db -> unit
+  val rev_iter : (string -> string -> bool) -> db -> unit
+  val iter_from : (string -> string -> bool) -> db -> string -> unit
+  val rev_iter_from : (string -> string -> bool) -> db -> string -> unit
+  module Batch :
+    sig
+      val make : unit -> writebatch
+      val put : writebatch -> string -> string -> unit
+      val put_substring :
+        writebatch -> string -> int -> int -> string -> int -> int -> unit
+      val delete : writebatch -> string -> unit
+      val delete_substring : writebatch -> string -> int -> int -> unit
+      val write : db -> ?sync:bool -> writebatch -> unit
+    end
+end
+
+module type LDB_WITH_TICK = sig
+  include LDB
+
+  val length : db -> int
+  val bounds : db -> (t * t) option
+  val mem_tick : db -> t -> bool
+  val put_tick : ?sync:bool -> db -> t -> unit
+  val put_tick_batch : writebatch -> t -> unit
+  val put_ticks : ?sync:bool -> db -> t list -> unit
+  val get_tick : db -> int64 -> t option
+end
+
+module MakeLDB(DB : LDB) = struct
+  include DB
+
   let length db =
     let cnt = ref 0 in
-    LevelDB.iter (fun _ _ -> incr cnt; true) db;
+    iter (fun _ _ -> incr cnt; true) db;
     !cnt
 
   let bounds db =
@@ -120,11 +172,11 @@ module LevelDB_ext = struct
     else
       let min_elt = String.create size in
       let max_elt = String.create size in
-      LevelDB.iter (fun k v ->
+      iter (fun k v ->
           String.blit k 0 min_elt 0 8;
           String.blit v 0 min_elt 8 16;
           false) db;
-      LevelDB.rev_iter (fun k v ->
+      rev_iter (fun k v ->
           String.blit k 0 max_elt 0 8;
           String.blit v 0 min_elt 8 16;
           false) db;
@@ -133,28 +185,28 @@ module LevelDB_ext = struct
 
   let mem_tick db t =
     Binary_packing.pack_signed_64_big_endian key 0 (Time_ns.to_int63_ns_since_epoch t.ts |> Int63.to_int64);
-    LevelDB.mem db key
+    mem db key
 
   let put_tick ?sync db t =
     Bytes.write ~buf_key:key ~buf_data:data t;
-    LevelDB.put ?sync db key data
+    put ?sync db key data
 
   let put_tick_batch batch t =
     Bytes.write ~buf_key:key ~buf_data:data t;
-    LevelDB.Batch.put batch key data
+    Batch.put batch key data
 
   let put_ticks ?sync db ts =
-    let batch = LevelDB.Batch.make () in
+    let batch = Batch.make () in
     List.iter ts ~f:begin fun t ->
       Bytes.write ~buf_key:key ~buf_data:data t;
-      LevelDB.Batch.put batch key data
+      Batch.put batch key data
     end;
-    LevelDB.Batch.write ?sync db batch
+    Batch.write ?sync db batch
 
   let get_tick db ts =
     let open Option.Monad_infix in
     Binary_packing.pack_signed_64_big_endian key 0 ts;
-    LevelDB.get db key >>| fun data ->
+    get db key >>| fun data ->
     let ts = Int63.of_int64_exn ts |> Time_ns.of_int63_ns_since_epoch in
     Bytes.read' ~ts ~data ()
 end
@@ -194,14 +246,18 @@ module File = struct
       then Error End_of_file
       else (In_channel.seek ic 0L; Result.return (min_elt, max_elt))
 
-  let of_leveldb ?start_ts ?end_ts db oc =
+  let of_db
+      (type db)
+      (ldb : (module LDB_WITH_TICK with type db = db))
+      ?start_ts ?end_ts (db:db) oc =
+    let module DB = (val ldb : LDB_WITH_TICK with type db = db) in
     let open Result in
     Out_channel.output_string oc hdr;
     let cnt = ref 0 in
     Result.of_option
-      ~error:(Failure "bounds") (LevelDB_ext.bounds db) >>= fun (min_elt, max_elt) ->
+      ~error:(Failure "bounds") (DB.bounds db) >>= fun (min_elt, max_elt) ->
     let nb_ticks = ref 0 in
-    LevelDB.iter (fun k v ->
+    DB.iter (fun k v ->
         incr nb_ticks;
         Out_channel.output oc ~buf:k ~pos:0 ~len:8;
         Out_channel.output oc ~buf:v ~pos:0 ~len:16;
@@ -209,7 +265,11 @@ module File = struct
     return
       (if (!cnt = 2) then !nb_ticks, Some (min_elt, max_elt) else 0, None)
 
-  let to_leveldb ic db =
+  let to_db
+    (type db)
+    (ldb : (module LDB_WITH_TICK with type db = db))
+    ic (db:db) =
+    let module DB = (val ldb : LDB_WITH_TICK with type db = db) in
     let open Result in
     bounds ic >>= fun (min_elt, max_elt) ->
     let buf = B.create size in
@@ -221,11 +281,15 @@ module File = struct
       let rec loop () =
         In_channel.really_input ic ~buf ~pos:0 ~len:size |> function
         | None -> Ok (cnt, Some (min_elt, max_elt))
-        | Some () -> LevelDB.put db (String.sub buf 0 8) (String.sub buf 8 16); loop ()
+        | Some () -> DB.put db (String.sub buf 0 8) (String.sub buf 8 16); loop ()
       in loop ()
     end
 
-  let leveldb_of_scid ?(offset=Time_ns.epoch) db fn =
+  let db_of_scid
+    (type db)
+    (ldb : (module LDB_WITH_TICK with type db = db))
+    ?(offset=Time_ns.epoch) db fn =
+    let module DB = (val ldb : LDB_WITH_TICK with type db = db) in
     let open Scid in
     let buf = B.create size in
     In_channel.with_file ~binary:true fn ~f:(fun ic ->
@@ -235,7 +299,7 @@ module File = struct
             let t = of_scid_record r in
             if Time_ns.(t.ts > offset) then begin
               Bytes.write ~buf_key:key ~buf_data:data t;
-              LevelDB.put db (String.sub buf 0 8) (String.sub buf 8 16);
+              DB.put db (String.sub buf 0 8) (String.sub buf 8 16);
               loop @@ succ nb_records
             end
             else loop nb_records
