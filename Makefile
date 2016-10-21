@@ -1,20 +1,10 @@
 PKG=dtc
-PREFIX=`opam config var prefix`
-BUILDOPTS=native=true native-dynlink=true
 
-all: build
-
-build:
-	ocaml pkg/build.ml $(BUILDOPTS)
-
-install: build
-	opam-installer --prefix=$(PREFIX) $(PKG).install
-
-uninstall: $(PKG).install
-	opam-installer -u --prefix=$(PREFIX) $(PKG).install
+all:
+	./build lib-byte ldb_browser.byte
 
 PHONY: clean
 
 clean:
 	rm -f $(PKG).install
-	ocamlbuild -clean
+	./build -clean

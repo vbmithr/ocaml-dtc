@@ -1,8 +1,8 @@
-PRJ dtc
-S lib
+PKG bytes
 S src
-B _build/lib
-B _build/src
+S test
+B _build/**
+
 PKG cstruct.ppx
 PKG ppx_deriving.std
 PKG core
@@ -11,3 +11,4 @@ PKG scid
 PKG leveldb
 PKG ppx_sexp_conv
 PKG ppx_bin_prot
+

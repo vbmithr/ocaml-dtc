@@ -1,4 +1,8 @@
 _build
-*.build
-*.native
+tmp
+*~
+\.\#*
+\#*#
 *.install
+*.native
+*.byte

@@ -1,6 +1,6 @@
 version = "0.1"
 description = "DTC library"
-requires = "core async cstruct leveldb scid"
+requires = "core cstruct scid"
 archive(byte) = "dtc.cma"
 archive(byte, plugin) = "dtc.cma"
 archive(native) = "dtc.cmxa"
