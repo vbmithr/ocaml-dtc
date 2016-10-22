@@ -76,7 +76,7 @@ module type LDB_WITH_TICK = sig
   val get_tick : db -> int64 -> t option
 end
 
-module MakeLDB(DB : LDB) : LDB_WITH_TICK
+module MakeLDB(DB : LDB) : LDB_WITH_TICK with type db = DB.db
 
 module File : sig
   (** Functions that operatate on tick files. *)
