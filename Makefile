@@ -1,7 +1,7 @@
 PKG=dtc
 
 all:
-	./build lib-byte ldb_browser.byte
+	./build
 
 PHONY: clean
 

@@ -11,4 +11,4 @@ true: debug, bin_annot, warn(-40)
         package(ppx_bin_prot), \
         thread
 
-<src/*>: package(leveldb)
+<src/ldb_browser.*>: package(leveldb)

@@ -1,2 +1,2 @@
-module Dtc = Dtc_intf
-module Tick = Tick
+module Dtc = Dtc_dtc
+module Tick = Dtc_tick

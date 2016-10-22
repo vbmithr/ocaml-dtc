@@ -2,7 +2,7 @@ open Core.Std
 
 type t = {
   ts: Time_ns.t;
-  side: Dtc_intf.side option;
+  side: Dtc_dtc.side option;
   p: Int63.t;
   v: Int63.t;
 } [@@deriving create, sexp, bin_io]
@@ -11,13 +11,13 @@ let compare t t' = compare t#p t'#p
 
 let side_of_int64 = function
   | 0L -> None
-  | 1L -> Some Dtc_intf.Buy
+  | 1L -> Some Dtc_dtc.Buy
   | 2L -> Some Sell
   | _ -> invalid_arg "side_of_int64"
 
 let int64_of_side = function
   | None -> 0L
-  | Some Dtc_intf.Buy -> 1L
+  | Some Dtc_dtc.Buy -> 1L
   | Some Sell -> 2L
 
 let int64_of_v_side v side =
