@@ -1,7 +1,7 @@
 PKG=dtc
 
 all:
-	./build
+	./build ldb_browser.native
 
 PHONY: clean
 
