@@ -757,6 +757,7 @@ module SecurityDefinition :
           qty_divisor : float;
           has_market_depth_data : bool;
           display_price_multiplier : float;
+          exchange_symbol: string
         }
         val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
         val show : t -> Ppx_deriving_runtime.string
@@ -786,7 +787,9 @@ module SecurityDefinition :
           ?shares_outstanding:int32 ->
           ?qty_divisor:float ->
           ?has_market_depth_data:bool ->
-          ?display_price_multiplier:float -> unit -> t
+          ?display_price_multiplier:float ->
+          ?exchange_symbol:string ->
+          unit -> t
         val to_cstruct : Cstruct.t -> t -> unit
         val sizeof_cs : int
       end
@@ -1079,13 +1082,13 @@ module Trading :
           sig
             module Request :
               sig
-                type t = { id : int32; orders : [ `All | `One of string ]; }
+                type t = { id : int32; order : string; trade_account : string }
                 val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
                 val show : t -> Ppx_deriving_runtime.string
                 val t_of_sexp : Sexplib.Sexp.t -> t
                 val sexp_of_t : t -> Sexplib.Sexp.t
                 val create :
-                  id:int32 -> orders:[ `All | `One of string ] -> unit -> t
+                  id:int32 -> ?order:string -> ?trade_account:string -> unit -> t
                 val read : Cstruct.t -> t
                 val sizeof_cs : int
               end

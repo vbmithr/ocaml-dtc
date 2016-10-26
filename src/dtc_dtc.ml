@@ -997,6 +997,7 @@ module SecurityDefinition = struct
         has_market_depth_data: uint8_t;
         _____padding: uint8_t [@len 3];
         display_price_multiplier: uint32_t;
+        exchange_symbol: uint8_t [@len 64];
       } [@@little_endian]]
 
     type t = {
@@ -1024,6 +1025,7 @@ module SecurityDefinition = struct
       qty_divisor: float [@default 0.];
       has_market_depth_data: bool [@default false];
       display_price_multiplier: float [@default 0.];
+      exchange_symbol: string [@default ""];
     } [@@deriving show,sexp,create]
 
     let to_cstruct cs t =
@@ -1055,6 +1057,7 @@ module SecurityDefinition = struct
       set_cs_qty_divisor cs @@ Int32.bits_of_float t.qty_divisor;
       set_cs_has_market_depth_data cs @@ int_of_bool t.has_market_depth_data;
       set_cs_display_price_multiplier cs @@ Int32.bits_of_float t.display_price_multiplier;
+      set_cs_exchange_symbol (bytes_with_msg t.exchange_symbol Lengths.symbol) 0 cs
   end
 end
 
@@ -1572,21 +1575,23 @@ module Trading = struct
             request_id: int32_t;
             request_all_orders: int32_t;
             server_order_id: uint8_t [@len 32];
+            trade_account: uint8_t [@len 32];
           } [@@little_endian]]
 
         type t = {
           id: int32;
-          orders: [`All | `One of string]
+          order: string [@default ""];
+          trade_account: string [@default ""]
         } [@@deriving show,sexp,create]
 
         let read cs =
           let id = get_cs_request_id cs in
+          let trade_account = get_cs_trade_account cs |> cstring_of_cstruct in
           match get_cs_request_all_orders cs with
           | 0l ->
-              let server_order_id =
-                get_cs_server_order_id cs |> cstring_of_cstruct in
-              create ~id ~orders:(`One server_order_id) ()
-          | _ -> create ~id ~orders:`All ()
+              let server_order_id = get_cs_server_order_id cs |> cstring_of_cstruct in
+              create ~id ~trade_account ~order:server_order_id ()
+          | _ -> create ~trade_account ~id ()
       end
     end
 
