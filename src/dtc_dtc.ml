@@ -328,24 +328,6 @@ let option_to_enum to_enum_f = function
   | None -> 0
   | Some v -> to_enum_f v
 
-module RejectSymbol = struct
-  [%%cstruct type cs = {
-      size: uint16_t;
-      _type: uint16_t;
-      symbol_id: uint16_t;
-      reason: uint8_t [@len 96];
-    } [@@little_endian]]
-end
-
-module RejectRequest = struct
-  [%%cstruct type cs = {
-      size: uint16_t;
-      _type: uint16_t;
-      request_id: int32_t;
-      reason: uint8_t [@len 96];
-    } [@@little_endian]]
-end
-
 let bytes_with_msg msg len =
   let buf = String.make len '\x00' in
   String.blit ~src:msg ~src_pos:0 ~dst:buf ~dst_pos:0
@@ -355,6 +337,44 @@ let bytes_with_msg msg len =
 let cstring_of_cstruct cs =
   let cstring = Cstruct.to_string cs in
   String.(sub cstring ~pos:0 ~len:(index_exn cstring '\x00'))
+
+module RejectSymbol = struct
+  [%%cstruct type cs = {
+      size: uint16_t;
+      _type: uint16_t;
+      symbol_id: uint16_t;
+      reason: uint8_t [@len 96];
+    } [@@little_endian]]
+end
+
+module type MSG = sig val msg : msg end
+
+module type REJECT_REQUEST = sig
+  val sizeof_cs : int
+  val write : Cstruct.t -> request_id:Int32.t -> ('a, unit, string, unit) format4 -> 'a
+end
+
+module type REJECT_SYMBOL_REQUEST = sig
+  val sizeof_cs : int
+  val write : Cstruct.t -> symbol_id:int -> ('a, unit, string, unit) format4 -> 'a
+end
+
+module RejectRequest (M : MSG) = struct
+  [%%cstruct type cs = {
+      size: uint16_t;
+      _type: uint16_t;
+      request_id: int32_t;
+      reason: uint8_t [@len 96];
+    } [@@little_endian]]
+
+    let write cs ~request_id k =
+      Printf.ksprintf begin fun reason ->
+        set_cs_size cs sizeof_cs;
+        set_cs__type cs (msg_to_enum M.msg);
+        set_cs_request_id cs request_id;
+        set_cs_reason (bytes_with_msg reason Lengths.text_description) 0 cs
+      end k
+end
 
 module Encoding = struct
   module CS = struct
@@ -587,7 +607,7 @@ module MarketData = struct
 
   module Reject = struct
     include RejectSymbol
-    let write cs symbol_id k =
+    let write cs ~symbol_id k =
       Printf.ksprintf (fun reason ->
           set_cs_size cs sizeof_cs;
           set_cs__type cs (msg_to_enum MarketDataReject);
@@ -836,7 +856,7 @@ module MarketDepth = struct
 
   module Reject = struct
     include RejectSymbol
-    let write cs symbol_id k =
+    let write cs ~symbol_id k =
       Printf.ksprintf (fun reason ->
           set_cs_size cs sizeof_cs;
           set_cs__type cs (msg_to_enum MarketDepthReject);
@@ -954,16 +974,7 @@ module SecurityDefinition = struct
         ()
   end
 
-  module Reject = struct
-    include RejectRequest
-    let write cs request_id k =
-      Printf.ksprintf (fun reason ->
-          set_cs_size cs sizeof_cs;
-          set_cs__type cs (msg_to_enum SecurityDefinitionReject);
-          set_cs_request_id cs request_id;
-          set_cs_reason (bytes_with_msg reason Lengths.text_description) 0 cs
-        ) k
-  end
+  module Reject = RejectRequest (struct let msg = SecurityDefinitionReject end)
 
   module Response = struct
     [%%cstruct type cs = {
@@ -1122,16 +1133,7 @@ module HistoricalPriceData = struct
       set_cs_flag1 cs t.flag1
   end
 
-  module Reject = struct
-    include RejectRequest
-    let write cs request_id k =
-      Printf.ksprintf (fun reason ->
-          set_cs_size cs sizeof_cs;
-          set_cs__type cs (msg_to_enum HistoricalPriceDataReject);
-          set_cs_request_id cs request_id;
-          set_cs_reason (bytes_with_msg reason Lengths.text_description) 0 cs
-        ) k
-  end
+  module Reject = RejectRequest (struct let msg = HistoricalPriceDataReject end)
 
   module Header = struct
     [%%cstruct type cs = {
@@ -1593,6 +1595,8 @@ module Trading = struct
               create ~id ~trade_account ~order:server_order_id ()
           | _ -> create ~trade_account ~id ()
       end
+
+      module Reject = RejectRequest (struct let msg = OpenOrdersReject end)
     end
 
     module Fills = struct
@@ -1621,16 +1625,7 @@ module Trading = struct
           create ~id ~srv_order_id ~nb_of_days ~trade_account ()
       end
 
-      module Reject = struct
-        include RejectRequest
-        let write cs request_id k =
-          Printf.ksprintf (fun reason ->
-              set_cs_size cs sizeof_cs;
-              set_cs__type cs @@ msg_to_enum HistoricalOrderFillReject;
-              set_cs_request_id cs request_id;
-              set_cs_reason (bytes_with_msg reason Lengths.text_description) 0 cs
-            ) k
-      end
+      module Reject = RejectRequest (struct let msg = HistoricalOrderFillReject end)
 
       module Response = struct
         [%%cstruct type cs = {
@@ -1709,16 +1704,7 @@ module Trading = struct
         create ~id ~trade_account ()
     end
 
-    module Reject = struct
-      include RejectRequest
-      let write cs request_id k =
-        Printf.ksprintf (fun reason ->
-            set_cs_size cs sizeof_cs;
-            set_cs__type cs @@ msg_to_enum CurrentPositionsReject;
-            set_cs_request_id cs request_id;
-            set_cs_reason (bytes_with_msg reason 96) 0 cs
-          ) k
-    end
+    module Reject = RejectRequest (struct let msg = CurrentPositionsReject end)
 
     module Update = struct
       [%%cstruct type cs = {
@@ -1823,16 +1809,7 @@ module Account = struct
           ()
     end
 
-    module Reject = struct
-      include RejectRequest
-      let write cs request_id k =
-        Printf.ksprintf (fun reason ->
-            set_cs_size cs sizeof_cs;
-            set_cs__type cs @@ msg_to_enum AccountBalanceReject;
-            set_cs_request_id cs request_id;
-            set_cs_reason (bytes_with_msg reason Lengths.text_description) 0 cs
-          ) k
-    end
+    module Reject = RejectRequest (struct let msg = AccountBalanceReject end)
 
     module Update = struct
       [%%cstruct type cs = {

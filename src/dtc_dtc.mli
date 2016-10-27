@@ -355,6 +355,17 @@ val security_of_enum : int -> security option
 val option_to_enum : ('a -> int) -> 'a option -> int
 val bytes_with_msg : Core.Std.String.t -> int -> Core.Std.String.t
 val cstring_of_cstruct : Cstruct.t -> Core.Std.String.t
+
+module type REJECT_REQUEST = sig
+  val sizeof_cs : int
+  val write : Cstruct.t -> request_id:Int32.t -> ('a, unit, string, unit) format4 -> 'a
+end
+
+module type REJECT_SYMBOL_REQUEST = sig
+  val sizeof_cs : int
+  val write : Cstruct.t -> symbol_id:int -> ('a, unit, string, unit) format4 -> 'a
+end
+
 module Encoding :
   sig
     type t = { version : int32; encoding : encoding; }
@@ -496,13 +507,7 @@ module MarketData :
         val read : Cstruct.t -> t
         val sizeof_cs : int
       end
-    module Reject :
-      sig
-        val write :
-          Cstruct.t ->
-          Cstruct.uint16 -> ('a, unit, string, unit) format4 -> 'a
-        val sizeof_cs : int
-      end
+    module Reject : REJECT_SYMBOL_REQUEST
     module Snapshot :
       sig
         type t = {
@@ -647,13 +652,7 @@ module MarketDepth :
         val read : Cstruct.t -> t
         val sizeof_cs : int
       end
-    module Reject :
-      sig
-        val write :
-          Cstruct.t ->
-          Cstruct.uint16 -> ('a, unit, string, unit) format4 -> 'a
-        val sizeof_cs : int
-      end
+    module Reject : REJECT_SYMBOL_REQUEST
     module Snapshot :
       sig
         type t = {
@@ -723,13 +722,7 @@ module SecurityDefinition :
         val read : Cstruct.t -> t
         val sizeof_cs : int
       end
-    module Reject :
-      sig
-        val write :
-          Cstruct.t ->
-          Cstruct.uint32 -> ('a, unit, string, unit) format4 -> 'a
-        val sizeof_cs : int
-      end
+    module Reject : REJECT_REQUEST
     module Response :
       sig
         type t = {
@@ -829,13 +822,7 @@ module HistoricalPriceData :
         val to_cstruct : Cstruct.t -> t -> unit
         val sizeof_cs : int
       end
-    module Reject :
-      sig
-        val write :
-          Cstruct.t ->
-          Cstruct.uint32 -> ('a, unit, string, unit) format4 -> 'a
-        val sizeof_cs : int
-      end
+    module Reject : REJECT_REQUEST
     module Header :
       sig
         type t = {
@@ -1092,6 +1079,7 @@ module Trading :
                 val read : Cstruct.t -> t
                 val sizeof_cs : int
               end
+            module Reject : REJECT_REQUEST
           end
         module Fills :
           sig
@@ -1113,13 +1101,7 @@ module Trading :
                   nb_of_days:int -> trade_account:string -> unit -> t
                 val read : Cstruct.t -> t
               end
-            module Reject :
-              sig
-                val write :
-                  Cstruct.t ->
-                  Cstruct.uint32 -> ('a, unit, string, unit) format4 -> 'a
-                val sizeof_cs : int
-              end
+            module Reject : REJECT_REQUEST
             module Response :
               sig
                 val write :
@@ -1153,13 +1135,7 @@ module Trading :
             val read : Cstruct.t -> t
             val sizeof_cs : int
           end
-        module Reject :
-          sig
-            val write :
-              Cstruct.t ->
-              Cstruct.uint32 -> ('a, unit, string, unit) format4 -> 'a
-            val sizeof_cs : int
-          end
+        module Reject : REJECT_REQUEST
         module Update :
           sig
             val write :
@@ -1206,13 +1182,7 @@ module Account :
             val read : Cstruct.t -> t
             val sizeof_cs : int
           end
-        module Reject :
-          sig
-            val write :
-              Cstruct.t ->
-              Cstruct.uint32 -> ('a, unit, string, unit) format4 -> 'a
-            val sizeof_cs : int
-          end
+        module Reject : REJECT_REQUEST
         module Update :
           sig
             val write :
