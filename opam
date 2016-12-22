@@ -23,4 +23,4 @@ depopts: [
 ]
 build:
 [[ "ocaml" "pkg/pkg.ml" "build"
-           "--pinned" "%{pinned}%" ]]
+           "--pinned" "%{pinned}%" "--with-leveldb" leveldb:installed ]]
