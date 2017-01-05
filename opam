@@ -19,7 +19,10 @@ depends: [
   "scid"
 ]
 depopts: [
-  "leveldb" {>= "1.1.2"}
+  "leveldb"
+]
+conflicts: [
+  "leveldb" {< "1.1.2"}
 ]
 build:
 [[ "ocaml" "pkg/pkg.ml" "build"
