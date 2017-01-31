@@ -202,7 +202,7 @@ val side_of_enum : int -> side option
 val side_of_sexp : Sexplib.Sexp.t -> side
 val sexp_of_side : side -> Sexplib.Sexp.t
 val bin_shape_side : Core.Std.Bin_prot.Shape.t
-val bin_size_side : 'a -> int
+val bin_size_side : side -> int
 val bin_write_side :
   Bin_prot.Common.buf ->
   pos:Bin_prot.Common.pos -> side -> Bin_prot.Common.pos
@@ -332,7 +332,8 @@ val min_encoding : int
 val max_encoding : int
 val encoding_to_enum : encoding -> int
 val encoding_of_enum : int -> encoding option
-val price_display_format_of_ticksize : float -> price_display_format
+val price_display_format_of_ticksize :
+  Core_kernel__.Import.float -> price_display_format
 type security =
     Futures
   | Stock
@@ -355,34 +356,159 @@ val security_of_enum : int -> security option
 val option_to_enum : ('a -> int) -> 'a option -> int
 val bytes_with_msg : Core.Std.String.t -> int -> Core.Std.String.t
 val cstring_of_cstruct : Cstruct.t -> Core.Std.String.t
-
-module type REJECT_REQUEST = sig
-  val sizeof_cs : int
-  val write : Cstruct.t -> request_id:Int32.t -> ('a, unit, string, unit) format4 -> 'a
-end
-
-module type REJECT_SYMBOL_REQUEST = sig
-  val sizeof_cs : int
-  val write : Cstruct.t -> symbol_id:int -> ('a, unit, string, unit) format4 -> 'a
-end
-
+module RejectSymbol :
+  sig
+    val sizeof_cs : int
+    val get_cs_size : Cstruct.t -> Cstruct.uint16
+    val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+    val get_cs__type : Cstruct.t -> Cstruct.uint16
+    val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+    val get_cs_symbol_id : Cstruct.t -> Cstruct.uint16
+    val set_cs_symbol_id : Cstruct.t -> Cstruct.uint16 -> unit
+    val get_cs_reason : Cstruct.t -> Cstruct.t
+    val copy_cs_reason : Cstruct.t -> string
+    val set_cs_reason : string -> int -> Cstruct.t -> unit
+    val blit_cs_reason : Cstruct.t -> int -> Cstruct.t -> unit
+    val hexdump_cs_to_buffer :
+      Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+    val hexdump_cs : Cstruct.t -> unit
+  end
+module type MSG = sig val msg : msg end
+module type REJECT_REQUEST =
+  sig
+    val sizeof_cs : int
+    val write :
+      Cstruct.t ->
+      request_id:Core.Std.Int32.t ->
+      ('a, unit, string, unit) Core.Std.format4 -> 'a
+  end
+module type REJECT_SYMBOL_REQUEST =
+  sig
+    val sizeof_cs : int
+    val write :
+      Cstruct.t ->
+      symbol_id:int -> ('a, unit, string, unit) Core.Std.format4 -> 'a
+  end
+module RejectRequest :
+  functor (M : MSG) ->
+    sig
+      val sizeof_cs : int
+      val get_cs_size : Cstruct.t -> Cstruct.uint16
+      val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+      val get_cs__type : Cstruct.t -> Cstruct.uint16
+      val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+      val get_cs_request_id : Cstruct.t -> Cstruct.uint32
+      val set_cs_request_id : Cstruct.t -> Cstruct.uint32 -> unit
+      val get_cs_reason : Cstruct.t -> Cstruct.t
+      val copy_cs_reason : Cstruct.t -> string
+      val set_cs_reason : string -> int -> Cstruct.t -> unit
+      val blit_cs_reason : Cstruct.t -> int -> Cstruct.t -> unit
+      val hexdump_cs_to_buffer :
+        Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+      val hexdump_cs : Cstruct.t -> unit
+      val write :
+        Cstruct.t ->
+        request_id:Cstruct.uint32 -> ('a, unit, string, unit) format4 -> 'a
+    end
 module Encoding :
   sig
+    module CS :
+      sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_version : Cstruct.t -> Cstruct.uint32
+        val set_cs_version : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_encoding : Cstruct.t -> Cstruct.uint32
+        val set_cs_encoding : Cstruct.t -> Cstruct.uint32 -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
+      end
     type t = { version : int32; encoding : encoding; }
     val create : version:int32 -> encoding:encoding -> unit -> t
-    module Request : sig
-      val read : Cstruct.t -> t
-      val sizeof_cs : int
-    end
-    module Response : sig
-      val write : Cstruct.t -> unit
-      val sizeof_cs : int
-    end
+    module Request :
+      sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_version : Cstruct.t -> Cstruct.uint32
+        val set_cs_version : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_encoding : Cstruct.t -> Cstruct.uint32
+        val set_cs_encoding : Cstruct.t -> Cstruct.uint32 -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
+        val read : Cstruct.t -> t
+      end
+    module Response :
+      sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_version : Cstruct.t -> Cstruct.uint32
+        val set_cs_version : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_encoding : Cstruct.t -> Cstruct.uint32
+        val set_cs_encoding : Cstruct.t -> Cstruct.uint32 -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
+        val write : Cstruct.t -> unit
+      end
   end
 module Logon :
   sig
     module Request :
       sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_protocol_version : Cstruct.t -> Cstruct.uint32
+        val set_cs_protocol_version : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_username : Cstruct.t -> Cstruct.t
+        val copy_cs_username : Cstruct.t -> string
+        val set_cs_username : string -> int -> Cstruct.t -> unit
+        val blit_cs_username : Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_password : Cstruct.t -> Cstruct.t
+        val copy_cs_password : Cstruct.t -> string
+        val set_cs_password : string -> int -> Cstruct.t -> unit
+        val blit_cs_password : Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_general_text_data : Cstruct.t -> Cstruct.t
+        val copy_cs_general_text_data : Cstruct.t -> string
+        val set_cs_general_text_data : string -> int -> Cstruct.t -> unit
+        val blit_cs_general_text_data : Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_integer_1 : Cstruct.t -> Cstruct.uint32
+        val set_cs_integer_1 : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_integer_2 : Cstruct.t -> Cstruct.uint32
+        val set_cs_integer_2 : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_heartbeat_interval : Cstruct.t -> Cstruct.uint32
+        val set_cs_heartbeat_interval : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_trade_mode : Cstruct.t -> Cstruct.uint32
+        val set_cs_trade_mode : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_trade_account : Cstruct.t -> Cstruct.t
+        val copy_cs_trade_account : Cstruct.t -> string
+        val set_cs_trade_account : string -> int -> Cstruct.t -> unit
+        val blit_cs_trade_account : Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_hardware_indentifier : Cstruct.t -> Cstruct.t
+        val copy_cs_hardware_indentifier : Cstruct.t -> string
+        val set_cs_hardware_indentifier : string -> int -> Cstruct.t -> unit
+        val blit_cs_hardware_indentifier :
+          Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_client_name : Cstruct.t -> Cstruct.t
+        val copy_cs_client_name : Cstruct.t -> string
+        val set_cs_client_name : string -> int -> Cstruct.t -> unit
+        val blit_cs_client_name : Cstruct.t -> int -> Cstruct.t -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
         type t = {
           protocol_version : int32;
           username : string;
@@ -412,10 +538,85 @@ module Logon :
           trade_account:string ->
           hardware_id:string -> client_name:string -> unit -> t
         val read : Cstruct.t -> t
-        val sizeof_cs : int
       end
     module Response :
       sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_protocol_version : Cstruct.t -> Cstruct.uint32
+        val set_cs_protocol_version : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_result : Cstruct.t -> Cstruct.uint32
+        val set_cs_result : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_result_text : Cstruct.t -> Cstruct.t
+        val copy_cs_result_text : Cstruct.t -> string
+        val set_cs_result_text : string -> int -> Cstruct.t -> unit
+        val blit_cs_result_text : Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_reconnect_address : Cstruct.t -> Cstruct.t
+        val copy_cs_reconnect_address : Cstruct.t -> string
+        val set_cs_reconnect_address : string -> int -> Cstruct.t -> unit
+        val blit_cs_reconnect_address : Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_integer_1 : Cstruct.t -> Cstruct.uint32
+        val set_cs_integer_1 : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_server_name : Cstruct.t -> Cstruct.t
+        val copy_cs_server_name : Cstruct.t -> string
+        val set_cs_server_name : string -> int -> Cstruct.t -> unit
+        val blit_cs_server_name : Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_market_depth_updates_best_bid_and_ask :
+          Cstruct.t -> Cstruct.uint8
+        val set_cs_market_depth_updates_best_bid_and_ask :
+          Cstruct.t -> Cstruct.uint8 -> unit
+        val get_cs_trading_supported : Cstruct.t -> Cstruct.uint8
+        val set_cs_trading_supported : Cstruct.t -> Cstruct.uint8 -> unit
+        val get_cs_oco_orders_supported : Cstruct.t -> Cstruct.uint8
+        val set_cs_oco_orders_supported : Cstruct.t -> Cstruct.uint8 -> unit
+        val get_cs_order_cancel_replace_supported :
+          Cstruct.t -> Cstruct.uint8
+        val set_cs_order_cancel_replace_supported :
+          Cstruct.t -> Cstruct.uint8 -> unit
+        val get_cs_symbol_exchange_delimiter : Cstruct.t -> Cstruct.t
+        val copy_cs_symbol_exchange_delimiter : Cstruct.t -> string
+        val set_cs_symbol_exchange_delimiter :
+          string -> int -> Cstruct.t -> unit
+        val blit_cs_symbol_exchange_delimiter :
+          Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_security_definitions_supported :
+          Cstruct.t -> Cstruct.uint8
+        val set_cs_security_definitions_supported :
+          Cstruct.t -> Cstruct.uint8 -> unit
+        val get_cs_historical_price_data_supported :
+          Cstruct.t -> Cstruct.uint8
+        val set_cs_historical_price_data_supported :
+          Cstruct.t -> Cstruct.uint8 -> unit
+        val get_cs_resubscribe_when_market_data_feed_available :
+          Cstruct.t -> Cstruct.uint8
+        val set_cs_resubscribe_when_market_data_feed_available :
+          Cstruct.t -> Cstruct.uint8 -> unit
+        val get_cs_market_depth_supported : Cstruct.t -> Cstruct.uint8
+        val set_cs_market_depth_supported :
+          Cstruct.t -> Cstruct.uint8 -> unit
+        val get_cs_one_historical_price_request_per_connection :
+          Cstruct.t -> Cstruct.uint8
+        val set_cs_one_historical_price_request_per_connection :
+          Cstruct.t -> Cstruct.uint8 -> unit
+        val get_cs_bracket_orders_supported : Cstruct.t -> Cstruct.uint8
+        val set_cs_bracket_orders_supported :
+          Cstruct.t -> Cstruct.uint8 -> unit
+        val get_cs_use_integer_price_order_messages :
+          Cstruct.t -> Cstruct.uint8
+        val set_cs_use_integer_price_order_messages :
+          Cstruct.t -> Cstruct.uint8 -> unit
+        val get_cs_uses_multiple_positions_per_symbol_and_trade_account :
+          Cstruct.t -> Cstruct.uint8
+        val set_cs_uses_multiple_positions_per_symbol_and_trade_account :
+          Cstruct.t -> Cstruct.uint8 -> unit
+        val get_cs_market_data_supported : Cstruct.t -> Cstruct.uint8
+        val set_cs_market_data_supported : Cstruct.t -> Cstruct.uint8 -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
         type t = {
           protocol_version : int;
           result : LogonStatus.t;
@@ -464,10 +665,21 @@ module Logon :
           ?multiple_positions_per_symbol_and_trade_account:bool ->
           ?market_data_supported:bool -> unit -> t
         val to_cstruct : Cstruct.t -> t -> unit
-        val sizeof_cs : int
       end
     module Heartbeat :
       sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_dropped_messages : Cstruct.t -> Cstruct.uint32
+        val set_cs_dropped_messages : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_timestamp : Cstruct.t -> Cstruct.uint64
+        val set_cs_timestamp : Cstruct.t -> Cstruct.uint64 -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
         type t = { dropped_msgs : int; ts : int64; }
         val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
         val show : t -> Ppx_deriving_runtime.string
@@ -477,20 +689,52 @@ module Logon :
         val read : Cstruct.t -> t
         val write :
           ?dropped_msgs:int -> ?ts:Core.Std.Time_ns.t -> Cstruct.t -> unit
-        val sizeof_cs : int
       end
     module Logoff :
       sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_reason : Cstruct.t -> Cstruct.t
+        val copy_cs_reason : Cstruct.t -> string
+        val set_cs_reason : string -> int -> Cstruct.t -> unit
+        val blit_cs_reason : Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_do_not_reconnect : Cstruct.t -> Cstruct.uint8
+        val set_cs_do_not_reconnect : Cstruct.t -> Cstruct.uint8 -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
         val write :
           Cstruct.t ->
           reconnect:bool -> ('a, unit, string, unit) format4 -> 'a
-        val sizeof_cs : int
       end
   end
 module MarketData :
   sig
     module Request :
       sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_action : Cstruct.t -> Cstruct.uint32
+        val set_cs_action : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_symbol_id : Cstruct.t -> Cstruct.uint16
+        val set_cs_symbol_id : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_symbol : Cstruct.t -> Cstruct.t
+        val copy_cs_symbol : Cstruct.t -> string
+        val set_cs_symbol : string -> int -> Cstruct.t -> unit
+        val blit_cs_symbol : Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_exchange : Cstruct.t -> Cstruct.t
+        val copy_cs_exchange : Cstruct.t -> string
+        val set_cs_exchange : string -> int -> Cstruct.t -> unit
+        val blit_cs_exchange : Cstruct.t -> int -> Cstruct.t -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
         type t = {
           action : RequestAction.t;
           symbol_id : int;
@@ -505,11 +749,78 @@ module MarketData :
           action:RequestAction.t ->
           symbol_id:int -> symbol:string -> exchange:string -> unit -> t
         val read : Cstruct.t -> t
-        val sizeof_cs : int
       end
-    module Reject : REJECT_SYMBOL_REQUEST
+    module Reject :
+      sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_symbol_id : Cstruct.t -> Cstruct.uint16
+        val set_cs_symbol_id : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_reason : Cstruct.t -> Cstruct.t
+        val copy_cs_reason : Cstruct.t -> string
+        val set_cs_reason : string -> int -> Cstruct.t -> unit
+        val blit_cs_reason : Cstruct.t -> int -> Cstruct.t -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
+        val write :
+          Cstruct.t ->
+          symbol_id:Cstruct.uint16 -> ('a, unit, string, unit) format4 -> 'a
+      end
     module Snapshot :
       sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_symbol_id : Cstruct.t -> Cstruct.uint16
+        val set_cs_symbol_id : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs___padding : Cstruct.t -> Cstruct.uint16
+        val set_cs___padding : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_session_settlement_price : Cstruct.t -> Cstruct.uint64
+        val set_cs_session_settlement_price :
+          Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_session_open : Cstruct.t -> Cstruct.uint64
+        val set_cs_session_open : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_session_high : Cstruct.t -> Cstruct.uint64
+        val set_cs_session_high : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_session_low : Cstruct.t -> Cstruct.uint64
+        val set_cs_session_low : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_session_volume : Cstruct.t -> Cstruct.uint64
+        val set_cs_session_volume : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_session_number_of_trades : Cstruct.t -> Cstruct.uint32
+        val set_cs_session_number_of_trades :
+          Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_open_interest : Cstruct.t -> Cstruct.uint32
+        val set_cs_open_interest : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_bid : Cstruct.t -> Cstruct.uint64
+        val set_cs_bid : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_ask : Cstruct.t -> Cstruct.uint64
+        val set_cs_ask : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_ask_qty : Cstruct.t -> Cstruct.uint64
+        val set_cs_ask_qty : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_bid_qty : Cstruct.t -> Cstruct.uint64
+        val set_cs_bid_qty : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_last_trade_price : Cstruct.t -> Cstruct.uint64
+        val set_cs_last_trade_price : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_last_trade_volume : Cstruct.t -> Cstruct.uint64
+        val set_cs_last_trade_volume : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_last_trade_ts : Cstruct.t -> Cstruct.uint64
+        val set_cs_last_trade_ts : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_bid_ask_ts : Cstruct.t -> Cstruct.uint64
+        val set_cs_bid_ask_ts : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_session_settlement_ts : Cstruct.t -> Cstruct.uint32
+        val set_cs_session_settlement_ts :
+          Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_trading_session_ts : Cstruct.t -> Cstruct.uint32
+        val set_cs_trading_session_ts : Cstruct.t -> Cstruct.uint32 -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
         type t = {
           symbol_id : int;
           session_settlement_price : float;
@@ -530,7 +841,9 @@ module MarketData :
           session_settlement_ts : Core.Std.Time_ns.t;
           trading_session_ts : Core.Std.Time_ns.t;
         }
-        val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
+        val pp :
+          Base__.Import.Caml.Format.formatter ->
+          t -> Ppx_deriving_runtime.unit
         val show : t -> Ppx_deriving_runtime.string
         val t_of_sexp : Sexplib.Sexp.t -> t
         val sexp_of_t : t -> Sexplib.Sexp.t
@@ -554,10 +867,27 @@ module MarketData :
           ?session_settlement_ts:Core.Std.Time_ns.t ->
           ?trading_session_ts:Core.Std.Time_ns.t -> unit -> t
         val to_cstruct : Cstruct.t -> t -> unit
-        val sizeof_cs : int
       end
     module UpdateTrade :
       sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_symbol_id : Cstruct.t -> Cstruct.uint16
+        val set_cs_symbol_id : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_at_bid_or_ask : Cstruct.t -> Cstruct.uint16
+        val set_cs_at_bid_or_ask : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_p : Cstruct.t -> Cstruct.uint64
+        val set_cs_p : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_v : Cstruct.t -> Cstruct.uint64
+        val set_cs_v : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_ts : Cstruct.t -> Cstruct.uint64
+        val set_cs_ts : Cstruct.t -> Cstruct.uint64 -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
         type t = {
           symbol_id : int;
           side : side option;
@@ -565,7 +895,9 @@ module MarketData :
           v : float;
           ts : Core.Std.Time_ns.t;
         }
-        val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
+        val pp :
+          Base__.Import.Caml.Format.formatter ->
+          t -> Ppx_deriving_runtime.unit
         val show : t -> Ppx_deriving_runtime.string
         val t_of_sexp : Sexplib.Sexp.t -> t
         val sexp_of_t : t -> Sexplib.Sexp.t
@@ -579,20 +911,56 @@ module MarketData :
           symbol_id:Cstruct.uint16 ->
           ?side:side ->
           p:float -> v:float -> ts:Core.Std.Time_ns.t -> Cstruct.t -> unit
-        val sizeof_cs : int
       end
     module UpdateBidAsk :
       sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_symbol_id : Cstruct.t -> Cstruct.uint16
+        val set_cs_symbol_id : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs___padding : Cstruct.t -> Cstruct.uint16
+        val set_cs___padding : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_bid_price : Cstruct.t -> Cstruct.uint64
+        val set_cs_bid_price : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_bid_qty : Cstruct.t -> Cstruct.uint32
+        val set_cs_bid_qty : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs____padding : Cstruct.t -> Cstruct.uint32
+        val set_cs____padding : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_ask_price : Cstruct.t -> Cstruct.uint64
+        val set_cs_ask_price : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_ask_qty : Cstruct.t -> Cstruct.uint32
+        val set_cs_ask_qty : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_ts : Cstruct.t -> Cstruct.uint32
+        val set_cs_ts : Cstruct.t -> Cstruct.uint32 -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
         val write :
           Cstruct.t ->
           symbol_id:Cstruct.uint16 ->
           bid:float ->
           bid_qty:float ->
           ask:float -> ask_qty:float -> ts:Core.Std.Time_ns.t -> unit
-        val sizeof_cs : int
       end
     module UpdateSession :
       sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_symbol_id : Cstruct.t -> Cstruct.uint16
+        val set_cs_symbol_id : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs___padding : Cstruct.t -> Cstruct.uint16
+        val set_cs___padding : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_data : Cstruct.t -> Cstruct.uint64
+        val set_cs_data : Cstruct.t -> Cstruct.uint64 -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
         type t = {
           kind : [ `High | `Low | `Open | `Settlement | `Volume ];
           symbol_id : int;
@@ -612,28 +980,81 @@ module MarketData :
           Cstruct.t ->
           kind:[< `High | `Low | `Open | `Settlement | `Volume ] ->
           symbol_id:Cstruct.uint16 -> data:float -> unit
-        val sizeof_cs : int
       end
     module UpdateOpenInterest :
       sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_symbol_id : Cstruct.t -> Cstruct.uint16
+        val set_cs_symbol_id : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs___padding : Cstruct.t -> Cstruct.uint16
+        val set_cs___padding : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_open_interest : Cstruct.t -> Cstruct.uint32
+        val set_cs_open_interest : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs____padding : Cstruct.t -> Cstruct.uint32
+        val set_cs____padding : Cstruct.t -> Cstruct.uint32 -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
         val write :
           Cstruct.t ->
           symbol_id:Cstruct.uint16 -> open_interest:Cstruct.uint32 -> unit
-        val sizeof_cs : int
       end
     module UpdateLastTradeSnapshot :
       sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_symbol_id : Cstruct.t -> Cstruct.uint16
+        val set_cs_symbol_id : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_last_trade_price : Cstruct.t -> Cstruct.uint64
+        val set_cs_last_trade_price : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_last_trade_volume : Cstruct.t -> Cstruct.uint64
+        val set_cs_last_trade_volume : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_last_trade_ts : Cstruct.t -> Cstruct.uint64
+        val set_cs_last_trade_ts : Cstruct.t -> Cstruct.uint64 -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
         val write :
           Cstruct.t ->
           symbol_id:Cstruct.uint16 ->
           price:float -> qty:float -> ts:float -> unit
-        val sizeof_cs : int
       end
   end
 module MarketDepth :
   sig
     module Request :
       sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_action : Cstruct.t -> Cstruct.uint32
+        val set_cs_action : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_symbol_id : Cstruct.t -> Cstruct.uint16
+        val set_cs_symbol_id : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_symbol : Cstruct.t -> Cstruct.t
+        val copy_cs_symbol : Cstruct.t -> string
+        val set_cs_symbol : string -> int -> Cstruct.t -> unit
+        val blit_cs_symbol : Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_exchange : Cstruct.t -> Cstruct.t
+        val copy_cs_exchange : Cstruct.t -> string
+        val set_cs_exchange : string -> int -> Cstruct.t -> unit
+        val blit_cs_exchange : Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs__padding : Cstruct.t -> Cstruct.uint16
+        val set_cs__padding : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_nb_levels : Cstruct.t -> Cstruct.uint32
+        val set_cs_nb_levels : Cstruct.t -> Cstruct.uint32 -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
         type t = {
           action : RequestAction.t;
           symbol_id : int;
@@ -650,11 +1071,51 @@ module MarketDepth :
           symbol_id:int ->
           symbol:string -> exchange:string -> nb_levels:int -> unit -> t
         val read : Cstruct.t -> t
-        val sizeof_cs : int
       end
-    module Reject : REJECT_SYMBOL_REQUEST
+    module Reject :
+      sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_symbol_id : Cstruct.t -> Cstruct.uint16
+        val set_cs_symbol_id : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_reason : Cstruct.t -> Cstruct.t
+        val copy_cs_reason : Cstruct.t -> string
+        val set_cs_reason : string -> int -> Cstruct.t -> unit
+        val blit_cs_reason : Cstruct.t -> int -> Cstruct.t -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
+        val write :
+          Cstruct.t ->
+          symbol_id:Cstruct.uint16 -> ('a, unit, string, unit) format4 -> 'a
+      end
     module Snapshot :
       sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_symbol_id : Cstruct.t -> Cstruct.uint16
+        val set_cs_symbol_id : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_side : Cstruct.t -> Cstruct.uint16
+        val set_cs_side : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_p : Cstruct.t -> Cstruct.uint64
+        val set_cs_p : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_v : Cstruct.t -> Cstruct.uint64
+        val set_cs_v : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_level : Cstruct.t -> Cstruct.uint16
+        val set_cs_level : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_first : Cstruct.t -> Cstruct.uint8
+        val set_cs_first : Cstruct.t -> Cstruct.uint8 -> unit
+        val get_cs_last : Cstruct.t -> Cstruct.uint8
+        val set_cs_last : Cstruct.t -> Cstruct.uint8 -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
         type t = {
           symbol_id : int;
           side : side option;
@@ -680,10 +1141,27 @@ module MarketDepth :
           p:float ->
           v:float ->
           lvl:Cstruct.uint16 -> first:bool -> last:bool -> Cstruct.t -> unit
-        val sizeof_cs : int
       end
     module Update :
       sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_symbol_id : Cstruct.t -> Cstruct.uint16
+        val set_cs_symbol_id : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_side : Cstruct.t -> Cstruct.uint16
+        val set_cs_side : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_p : Cstruct.t -> Cstruct.uint64
+        val set_cs_p : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_v : Cstruct.t -> Cstruct.uint64
+        val set_cs_v : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_op : Cstruct.t -> Cstruct.uint8
+        val set_cs_op : Cstruct.t -> Cstruct.uint8 -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
         type t = {
           symbol_id : int;
           side : side option;
@@ -705,13 +1183,30 @@ module MarketDepth :
           ?side:side ->
           ?p:float ->
           ?v:float -> op:[< `Delete | `Insert_update ] -> Cstruct.t -> unit
-        val sizeof_cs : int
       end
   end
 module SecurityDefinition :
   sig
     module Request :
       sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_request_id : Cstruct.t -> Cstruct.uint32
+        val set_cs_request_id : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_symbol : Cstruct.t -> Cstruct.t
+        val copy_cs_symbol : Cstruct.t -> string
+        val set_cs_symbol : string -> int -> Cstruct.t -> unit
+        val blit_cs_symbol : Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_exchange : Cstruct.t -> Cstruct.t
+        val copy_cs_exchange : Cstruct.t -> string
+        val set_cs_exchange : string -> int -> Cstruct.t -> unit
+        val blit_cs_exchange : Cstruct.t -> int -> Cstruct.t -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
         type t = { id : int32; symbol : string; exchange : string; }
         val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
         val show : t -> Ppx_deriving_runtime.string
@@ -720,11 +1215,121 @@ module SecurityDefinition :
         val create :
           id:int32 -> symbol:string -> exchange:string -> unit -> t
         val read : Cstruct.t -> t
-        val sizeof_cs : int
       end
-    module Reject : REJECT_REQUEST
+    module Reject :
+      sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_request_id : Cstruct.t -> Cstruct.uint32
+        val set_cs_request_id : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_reason : Cstruct.t -> Cstruct.t
+        val copy_cs_reason : Cstruct.t -> string
+        val set_cs_reason : string -> int -> Cstruct.t -> unit
+        val blit_cs_reason : Cstruct.t -> int -> Cstruct.t -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
+        val write :
+          Cstruct.t ->
+          request_id:Cstruct.uint32 -> ('a, unit, string, unit) format4 -> 'a
+      end
     module Response :
       sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_request_id : Cstruct.t -> Cstruct.uint32
+        val set_cs_request_id : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_symbol : Cstruct.t -> Cstruct.t
+        val copy_cs_symbol : Cstruct.t -> string
+        val set_cs_symbol : string -> int -> Cstruct.t -> unit
+        val blit_cs_symbol : Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_exchange : Cstruct.t -> Cstruct.t
+        val copy_cs_exchange : Cstruct.t -> string
+        val set_cs_exchange : string -> int -> Cstruct.t -> unit
+        val blit_cs_exchange : Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_security_type : Cstruct.t -> Cstruct.uint32
+        val set_cs_security_type : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_description : Cstruct.t -> Cstruct.t
+        val copy_cs_description : Cstruct.t -> string
+        val set_cs_description : string -> int -> Cstruct.t -> unit
+        val blit_cs_description : Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_min_price_increment : Cstruct.t -> Cstruct.uint32
+        val set_cs_min_price_increment : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_price_display_format : Cstruct.t -> Cstruct.uint32
+        val set_cs_price_display_format : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_currency_value_per_increment : Cstruct.t -> Cstruct.uint32
+        val set_cs_currency_value_per_increment :
+          Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_is_final_msg : Cstruct.t -> Cstruct.uint8
+        val set_cs_is_final_msg : Cstruct.t -> Cstruct.uint8 -> unit
+        val get_cs___padding : Cstruct.t -> Cstruct.t
+        val copy_cs___padding : Cstruct.t -> string
+        val set_cs___padding : string -> int -> Cstruct.t -> unit
+        val blit_cs___padding : Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_float_to_int_price_multiplier :
+          Cstruct.t -> Cstruct.uint32
+        val set_cs_float_to_int_price_multiplier :
+          Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_int_to_float_price_divisor : Cstruct.t -> Cstruct.uint32
+        val set_cs_int_to_float_price_divisor :
+          Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_underlying_symbol : Cstruct.t -> Cstruct.t
+        val copy_cs_underlying_symbol : Cstruct.t -> string
+        val set_cs_underlying_symbol : string -> int -> Cstruct.t -> unit
+        val blit_cs_underlying_symbol : Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_updates_bid_ask_only : Cstruct.t -> Cstruct.uint8
+        val set_cs_updates_bid_ask_only : Cstruct.t -> Cstruct.uint8 -> unit
+        val get_cs____padding : Cstruct.t -> Cstruct.t
+        val copy_cs____padding : Cstruct.t -> string
+        val set_cs____padding : string -> int -> Cstruct.t -> unit
+        val blit_cs____padding : Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_strike_price : Cstruct.t -> Cstruct.uint32
+        val set_cs_strike_price : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_put_or_call : Cstruct.t -> Cstruct.uint8
+        val set_cs_put_or_call : Cstruct.t -> Cstruct.uint8 -> unit
+        val get_cs_____padding : Cstruct.t -> Cstruct.t
+        val copy_cs_____padding : Cstruct.t -> string
+        val set_cs_____padding : string -> int -> Cstruct.t -> unit
+        val blit_cs_____padding : Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_short_interest : Cstruct.t -> Cstruct.uint32
+        val set_cs_short_interest : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_security_expiration_date : Cstruct.t -> Cstruct.uint32
+        val set_cs_security_expiration_date :
+          Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_buy_rollover_interest : Cstruct.t -> Cstruct.uint32
+        val set_cs_buy_rollover_interest :
+          Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_sell_rollover_interest : Cstruct.t -> Cstruct.uint32
+        val set_cs_sell_rollover_interest :
+          Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_earnings_per_share : Cstruct.t -> Cstruct.uint32
+        val set_cs_earnings_per_share : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_shares_outstanding : Cstruct.t -> Cstruct.uint32
+        val set_cs_shares_outstanding : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_qty_divisor : Cstruct.t -> Cstruct.uint32
+        val set_cs_qty_divisor : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_has_market_depth_data : Cstruct.t -> Cstruct.uint8
+        val set_cs_has_market_depth_data : Cstruct.t -> Cstruct.uint8 -> unit
+        val get_cs______padding : Cstruct.t -> Cstruct.t
+        val copy_cs______padding : Cstruct.t -> string
+        val set_cs______padding : string -> int -> Cstruct.t -> unit
+        val blit_cs______padding : Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_display_price_multiplier : Cstruct.t -> Cstruct.uint32
+        val set_cs_display_price_multiplier :
+          Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_exchange_symbol : Cstruct.t -> Cstruct.t
+        val copy_cs_exchange_symbol : Cstruct.t -> string
+        val set_cs_exchange_symbol : string -> int -> Cstruct.t -> unit
+        val blit_cs_exchange_symbol : Cstruct.t -> int -> Cstruct.t -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
         type t = {
           request_id : int32;
           symbol : string;
@@ -750,7 +1355,7 @@ module SecurityDefinition :
           qty_divisor : float;
           has_market_depth_data : bool;
           display_price_multiplier : float;
-          exchange_symbol: string
+          exchange_symbol : string;
         }
         val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
         val show : t -> Ppx_deriving_runtime.string
@@ -781,16 +1386,50 @@ module SecurityDefinition :
           ?qty_divisor:float ->
           ?has_market_depth_data:bool ->
           ?display_price_multiplier:float ->
-          ?exchange_symbol:string ->
-          unit -> t
+          ?exchange_symbol:string -> unit -> t
         val to_cstruct : Cstruct.t -> t -> unit
-        val sizeof_cs : int
       end
   end
 module HistoricalPriceData :
   sig
     module Request :
       sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_request_id : Cstruct.t -> Cstruct.uint32
+        val set_cs_request_id : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_symbol : Cstruct.t -> Cstruct.t
+        val copy_cs_symbol : Cstruct.t -> string
+        val set_cs_symbol : string -> int -> Cstruct.t -> unit
+        val blit_cs_symbol : Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_exchange : Cstruct.t -> Cstruct.t
+        val copy_cs_exchange : Cstruct.t -> string
+        val set_cs_exchange : string -> int -> Cstruct.t -> unit
+        val blit_cs_exchange : Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_record_interval : Cstruct.t -> Cstruct.uint32
+        val set_cs_record_interval : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs___padding : Cstruct.t -> Cstruct.uint32
+        val set_cs___padding : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_start_ts : Cstruct.t -> Cstruct.uint64
+        val set_cs_start_ts : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_end_ts : Cstruct.t -> Cstruct.uint64
+        val set_cs_end_ts : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_max_days : Cstruct.t -> Cstruct.uint32
+        val set_cs_max_days : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_zlib : Cstruct.t -> Cstruct.uint8
+        val set_cs_zlib : Cstruct.t -> Cstruct.uint8 -> unit
+        val get_cs_request_dividend_adjusted_stock_data :
+          Cstruct.t -> Cstruct.uint8
+        val set_cs_request_dividend_adjusted_stock_data :
+          Cstruct.t -> Cstruct.uint8 -> unit
+        val get_cs_flag1 : Cstruct.t -> Cstruct.uint8
+        val set_cs_flag1 : Cstruct.t -> Cstruct.uint8 -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
         type t = {
           request_id : int32;
           symbol : string;
@@ -803,7 +1442,9 @@ module HistoricalPriceData :
           request_dividend_adjusted_stock_data : bool;
           flag1 : int;
         }
-        val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
+        val pp :
+          Base__.Import.Caml.Format.formatter ->
+          t -> Ppx_deriving_runtime.unit
         val show : t -> Ppx_deriving_runtime.string
         val t_of_sexp : Sexplib.Sexp.t -> t
         val sexp_of_t : t -> Sexplib.Sexp.t
@@ -820,11 +1461,49 @@ module HistoricalPriceData :
           ?flag1:int -> unit -> t
         val read : Cstruct.t -> t
         val to_cstruct : Cstruct.t -> t -> unit
-        val sizeof_cs : int
       end
-    module Reject : REJECT_REQUEST
+    module Reject :
+      sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_request_id : Cstruct.t -> Cstruct.uint32
+        val set_cs_request_id : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_reason : Cstruct.t -> Cstruct.t
+        val copy_cs_reason : Cstruct.t -> string
+        val set_cs_reason : string -> int -> Cstruct.t -> unit
+        val blit_cs_reason : Cstruct.t -> int -> Cstruct.t -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
+        val write :
+          Cstruct.t ->
+          request_id:Cstruct.uint32 -> ('a, unit, string, unit) format4 -> 'a
+      end
     module Header :
       sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_request_id : Cstruct.t -> Cstruct.uint32
+        val set_cs_request_id : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_record_ival : Cstruct.t -> Cstruct.uint32
+        val set_cs_record_ival : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_zlib : Cstruct.t -> Cstruct.uint8
+        val set_cs_zlib : Cstruct.t -> Cstruct.uint8 -> unit
+        val get_cs_empty : Cstruct.t -> Cstruct.uint8
+        val set_cs_empty : Cstruct.t -> Cstruct.uint8 -> unit
+        val get_cs___padding : Cstruct.t -> Cstruct.uint16
+        val set_cs___padding : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_int_price_divisor : Cstruct.t -> Cstruct.uint32
+        val set_cs_int_price_divisor : Cstruct.t -> Cstruct.uint32 -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
         type t = {
           request_id : int32;
           record_ival : int;
@@ -841,10 +1520,41 @@ module HistoricalPriceData :
           record_ival:int ->
           ?zlib:bool -> ?empty:bool -> int_price_divisor:float -> unit -> t
         val to_cstruct : Cstruct.t -> t -> unit
-        val sizeof_cs : int
       end
     module Record :
       sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_request_id : Cstruct.t -> Cstruct.uint32
+        val set_cs_request_id : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_start : Cstruct.t -> Cstruct.uint64
+        val set_cs_start : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_o : Cstruct.t -> Cstruct.uint64
+        val set_cs_o : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_h : Cstruct.t -> Cstruct.uint64
+        val set_cs_h : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_l : Cstruct.t -> Cstruct.uint64
+        val set_cs_l : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_c : Cstruct.t -> Cstruct.uint64
+        val set_cs_c : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_v : Cstruct.t -> Cstruct.uint64
+        val set_cs_v : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_num_trades : Cstruct.t -> Cstruct.uint32
+        val set_cs_num_trades : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs___padding : Cstruct.t -> Cstruct.uint32
+        val set_cs___padding : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_bid_v : Cstruct.t -> Cstruct.uint64
+        val set_cs_bid_v : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_ask_v : Cstruct.t -> Cstruct.uint64
+        val set_cs_ask_v : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_final : Cstruct.t -> Cstruct.uint8
+        val set_cs_final : Cstruct.t -> Cstruct.uint8 -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
         type t = {
           request_id : int32;
           start_ts : Core.Std.Time_ns.t;
@@ -858,7 +1568,9 @@ module HistoricalPriceData :
           ask_v : float;
           final : bool;
         }
-        val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
+        val pp :
+          Base__.Import.Caml.Format.formatter ->
+          t -> Ppx_deriving_runtime.unit
         val show : t -> Ppx_deriving_runtime.string
         val t_of_sexp : Sexplib.Sexp.t -> t
         val sexp_of_t : t -> Sexplib.Sexp.t
@@ -873,16 +1585,38 @@ module HistoricalPriceData :
           ?num_trades:int32 ->
           ?bid_v:float -> ?ask_v:float -> ?final:bool -> unit -> t
         val to_cstruct : Cstruct.t -> t -> unit
-        val sizeof_cs : int
       end
     module Tick :
       sig
+        val sizeof_cs : int
+        val get_cs_size : Cstruct.t -> Cstruct.uint16
+        val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs__type : Cstruct.t -> Cstruct.uint16
+        val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs_request_id : Cstruct.t -> Cstruct.uint32
+        val set_cs_request_id : Cstruct.t -> Cstruct.uint32 -> unit
+        val get_cs_timestamp : Cstruct.t -> Cstruct.uint64
+        val set_cs_timestamp : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_side : Cstruct.t -> Cstruct.uint16
+        val set_cs_side : Cstruct.t -> Cstruct.uint16 -> unit
+        val get_cs___padding : Cstruct.t -> Cstruct.t
+        val copy_cs___padding : Cstruct.t -> string
+        val set_cs___padding : string -> int -> Cstruct.t -> unit
+        val blit_cs___padding : Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_price : Cstruct.t -> Cstruct.uint64
+        val set_cs_price : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_volume : Cstruct.t -> Cstruct.uint64
+        val set_cs_volume : Cstruct.t -> Cstruct.uint64 -> unit
+        val get_cs_final : Cstruct.t -> Cstruct.uint8
+        val set_cs_final : Cstruct.t -> Cstruct.uint8 -> unit
+        val hexdump_cs_to_buffer :
+          Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+        val hexdump_cs : Cstruct.t -> unit
         val write :
           ?final:bool ->
           request_id:Cstruct.uint32 ->
           ts:Core.Std.Time_ns.t ->
           p:float -> v:float -> ?side:side -> Cstruct.t -> unit
-        val sizeof_cs : int
       end
   end
 module Trading :
@@ -891,6 +1625,60 @@ module Trading :
       sig
         module Submit :
           sig
+            val sizeof_cs : int
+            val get_cs_size : Cstruct.t -> Cstruct.uint16
+            val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs__type : Cstruct.t -> Cstruct.uint16
+            val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs_symbol : Cstruct.t -> Cstruct.t
+            val copy_cs_symbol : Cstruct.t -> string
+            val set_cs_symbol : string -> int -> Cstruct.t -> unit
+            val blit_cs_symbol : Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_exchange : Cstruct.t -> Cstruct.t
+            val copy_cs_exchange : Cstruct.t -> string
+            val set_cs_exchange : string -> int -> Cstruct.t -> unit
+            val blit_cs_exchange : Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_trade_account : Cstruct.t -> Cstruct.t
+            val copy_cs_trade_account : Cstruct.t -> string
+            val set_cs_trade_account : string -> int -> Cstruct.t -> unit
+            val blit_cs_trade_account : Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_order_id : Cstruct.t -> Cstruct.t
+            val copy_cs_order_id : Cstruct.t -> string
+            val set_cs_order_id : string -> int -> Cstruct.t -> unit
+            val blit_cs_order_id : Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_order_type : Cstruct.t -> Cstruct.uint32
+            val set_cs_order_type : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_buy_sell : Cstruct.t -> Cstruct.uint32
+            val set_cs_buy_sell : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs___padding : Cstruct.t -> Cstruct.uint32
+            val set_cs___padding : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_price1 : Cstruct.t -> Cstruct.uint64
+            val set_cs_price1 : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_price2 : Cstruct.t -> Cstruct.uint64
+            val set_cs_price2 : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_qty : Cstruct.t -> Cstruct.uint64
+            val set_cs_qty : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_tif : Cstruct.t -> Cstruct.uint32
+            val set_cs_tif : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs____padding : Cstruct.t -> Cstruct.uint32
+            val set_cs____padding : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_good_till_ts : Cstruct.t -> Cstruct.uint64
+            val set_cs_good_till_ts : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_automated : Cstruct.t -> Cstruct.uint8
+            val set_cs_automated : Cstruct.t -> Cstruct.uint8 -> unit
+            val get_cs_parent : Cstruct.t -> Cstruct.uint8
+            val set_cs_parent : Cstruct.t -> Cstruct.uint8 -> unit
+            val get_cs_text : Cstruct.t -> Cstruct.t
+            val copy_cs_text : Cstruct.t -> string
+            val set_cs_text : string -> int -> Cstruct.t -> unit
+            val blit_cs_text : Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_____padding : Cstruct.t -> Cstruct.uint16
+            val set_cs_____padding : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs_open_or_close : Cstruct.t -> Cstruct.uint32
+            val set_cs_open_or_close : Cstruct.t -> Cstruct.uint32 -> unit
+            val hexdump_cs_to_buffer :
+              Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+            val hexdump_cs : Cstruct.t -> unit
             type t = {
               trade_account : string;
               symbol : string;
@@ -908,7 +1696,9 @@ module Trading :
               parent : bool;
               text : string;
             }
-            val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
+            val pp :
+              Base__.Import.Caml.Format.formatter ->
+              t -> Ppx_deriving_runtime.unit
             val show : t -> Ppx_deriving_runtime.string
             val t_of_sexp : Sexplib.Sexp.t -> t
             val sexp_of_t : t -> Sexplib.Sexp.t
@@ -927,10 +1717,84 @@ module Trading :
               ?good_till_ts:Core.Std.Time_ns.t ->
               automated:bool -> parent:bool -> text:string -> unit -> t
             val read : Cstruct.t -> t
-            val sizeof_cs : int
           end
         module SubmitOCO :
           sig
+            val sizeof_cs : int
+            val get_cs_size : Cstruct.t -> Cstruct.uint16
+            val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs__type : Cstruct.t -> Cstruct.uint16
+            val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs_symbol : Cstruct.t -> Cstruct.t
+            val copy_cs_symbol : Cstruct.t -> string
+            val set_cs_symbol : string -> int -> Cstruct.t -> unit
+            val blit_cs_symbol : Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_exchange : Cstruct.t -> Cstruct.t
+            val copy_cs_exchange : Cstruct.t -> string
+            val set_cs_exchange : string -> int -> Cstruct.t -> unit
+            val blit_cs_exchange : Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_order_id_1 : Cstruct.t -> Cstruct.t
+            val copy_cs_order_id_1 : Cstruct.t -> string
+            val set_cs_order_id_1 : string -> int -> Cstruct.t -> unit
+            val blit_cs_order_id_1 : Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_order_type_1 : Cstruct.t -> Cstruct.uint32
+            val set_cs_order_type_1 : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_buy_sell_1 : Cstruct.t -> Cstruct.uint32
+            val set_cs_buy_sell_1 : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs___padding : Cstruct.t -> Cstruct.uint32
+            val set_cs___padding : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_price1_1 : Cstruct.t -> Cstruct.uint64
+            val set_cs_price1_1 : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_price2_1 : Cstruct.t -> Cstruct.uint64
+            val set_cs_price2_1 : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_qty_1 : Cstruct.t -> Cstruct.uint64
+            val set_cs_qty_1 : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_order_id_2 : Cstruct.t -> Cstruct.t
+            val copy_cs_order_id_2 : Cstruct.t -> string
+            val set_cs_order_id_2 : string -> int -> Cstruct.t -> unit
+            val blit_cs_order_id_2 : Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_order_type_2 : Cstruct.t -> Cstruct.uint32
+            val set_cs_order_type_2 : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_buy_sell_2 : Cstruct.t -> Cstruct.uint32
+            val set_cs_buy_sell_2 : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_price1_2 : Cstruct.t -> Cstruct.uint64
+            val set_cs_price1_2 : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_price2_2 : Cstruct.t -> Cstruct.uint64
+            val set_cs_price2_2 : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_qty_2 : Cstruct.t -> Cstruct.uint64
+            val set_cs_qty_2 : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_tif : Cstruct.t -> Cstruct.uint32
+            val set_cs_tif : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs____padding : Cstruct.t -> Cstruct.uint32
+            val set_cs____padding : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_good_till_ts : Cstruct.t -> Cstruct.uint64
+            val set_cs_good_till_ts : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_trade_account : Cstruct.t -> Cstruct.t
+            val copy_cs_trade_account : Cstruct.t -> string
+            val set_cs_trade_account : string -> int -> Cstruct.t -> unit
+            val blit_cs_trade_account : Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_automated : Cstruct.t -> Cstruct.uint8
+            val set_cs_automated : Cstruct.t -> Cstruct.uint8 -> unit
+            val get_cs_parent : Cstruct.t -> Cstruct.t
+            val copy_cs_parent : Cstruct.t -> string
+            val set_cs_parent : string -> int -> Cstruct.t -> unit
+            val blit_cs_parent : Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_text : Cstruct.t -> Cstruct.t
+            val copy_cs_text : Cstruct.t -> string
+            val set_cs_text : string -> int -> Cstruct.t -> unit
+            val blit_cs_text : Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_____padding : Cstruct.t -> Cstruct.t
+            val copy_cs_____padding : Cstruct.t -> string
+            val set_cs_____padding : string -> int -> Cstruct.t -> unit
+            val blit_cs_____padding : Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_open_or_close : Cstruct.t -> Cstruct.uint32
+            val set_cs_open_or_close : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_partial_fill_handling : Cstruct.t -> Cstruct.uint8
+            val set_cs_partial_fill_handling :
+              Cstruct.t -> Cstruct.uint8 -> unit
+            val hexdump_cs_to_buffer :
+              Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+            val hexdump_cs : Cstruct.t -> unit
             type t = {
               trade_account : string;
               symbol : string;
@@ -955,7 +1819,9 @@ module Trading :
               parent : string;
               text : string;
             }
-            val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
+            val pp :
+              Base__.Import.Caml.Format.formatter ->
+              t -> Ppx_deriving_runtime.unit
             val show : t -> Ppx_deriving_runtime.string
             val t_of_sexp : Sexplib.Sexp.t -> t
             val sexp_of_t : t -> Sexplib.Sexp.t
@@ -981,10 +1847,49 @@ module Trading :
               ?partial_fill_handling:partial_fill ->
               automated:bool -> parent:string -> text:string -> unit -> t
             val read : Cstruct.t -> t
-            val sizeof_cs : int
           end
         module Replace :
           sig
+            val sizeof_cs : int
+            val get_cs_size : Cstruct.t -> Cstruct.uint16
+            val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs__type : Cstruct.t -> Cstruct.uint16
+            val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs_server_order_id : Cstruct.t -> Cstruct.t
+            val copy_cs_server_order_id : Cstruct.t -> string
+            val set_cs_server_order_id : string -> int -> Cstruct.t -> unit
+            val blit_cs_server_order_id :
+              Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_client_order_id : Cstruct.t -> Cstruct.t
+            val copy_cs_client_order_id : Cstruct.t -> string
+            val set_cs_client_order_id : string -> int -> Cstruct.t -> unit
+            val blit_cs_client_order_id :
+              Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs__padding : Cstruct.t -> Cstruct.uint32
+            val set_cs__padding : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_price1 : Cstruct.t -> Cstruct.uint64
+            val set_cs_price1 : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_price2 : Cstruct.t -> Cstruct.uint64
+            val set_cs_price2 : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_qty : Cstruct.t -> Cstruct.uint64
+            val set_cs_qty : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_price1_set : Cstruct.t -> Cstruct.uint8
+            val set_cs_price1_set : Cstruct.t -> Cstruct.uint8 -> unit
+            val get_cs_price2_set : Cstruct.t -> Cstruct.uint8
+            val set_cs_price2_set : Cstruct.t -> Cstruct.uint8 -> unit
+            val get_cs___padding : Cstruct.t -> Cstruct.uint16
+            val set_cs___padding : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs_order_type : Cstruct.t -> Cstruct.uint32
+            val set_cs_order_type : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_tif : Cstruct.t -> Cstruct.uint32
+            val set_cs_tif : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs____padding : Cstruct.t -> Cstruct.uint32
+            val set_cs____padding : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_good_till_ts : Cstruct.t -> Cstruct.uint64
+            val set_cs_good_till_ts : Cstruct.t -> Cstruct.uint64 -> unit
+            val hexdump_cs_to_buffer :
+              Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+            val hexdump_cs : Cstruct.t -> unit
             type t = {
               srv_ord_id : string;
               cli_ord_id : string;
@@ -997,7 +1902,9 @@ module Trading :
               tif : TimeInForce.t option;
               good_till_ts : Core.Std.Time_ns.t;
             }
-            val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
+            val pp :
+              Base__.Import.Caml.Format.formatter ->
+              t -> Ppx_deriving_runtime.unit
             val show : t -> Ppx_deriving_runtime.string
             val t_of_sexp : Sexplib.Sexp.t -> t
             val sexp_of_t : t -> Sexplib.Sexp.t
@@ -1013,10 +1920,27 @@ module Trading :
               ?tif:TimeInForce.t ->
               ?good_till_ts:Core.Std.Time_ns.t -> unit -> t
             val read : Cstruct.t -> t
-            val sizeof_cs : int
           end
         module Cancel :
           sig
+            val sizeof_cs : int
+            val get_cs_size : Cstruct.t -> Cstruct.uint16
+            val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs__type : Cstruct.t -> Cstruct.uint16
+            val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs_server_order_id : Cstruct.t -> Cstruct.t
+            val copy_cs_server_order_id : Cstruct.t -> string
+            val set_cs_server_order_id : string -> int -> Cstruct.t -> unit
+            val blit_cs_server_order_id :
+              Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_client_order_id : Cstruct.t -> Cstruct.t
+            val copy_cs_client_order_id : Cstruct.t -> string
+            val set_cs_client_order_id : string -> int -> Cstruct.t -> unit
+            val blit_cs_client_order_id :
+              Cstruct.t -> int -> Cstruct.t -> unit
+            val hexdump_cs_to_buffer :
+              Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+            val hexdump_cs : Cstruct.t -> unit
             type t = { srv_ord_id : string; cli_ord_id : string; }
             val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
             val show : t -> Ppx_deriving_runtime.string
@@ -1024,10 +1948,130 @@ module Trading :
             val sexp_of_t : t -> Sexplib.Sexp.t
             val create : srv_ord_id:string -> cli_ord_id:string -> unit -> t
             val read : Cstruct.t -> t
-            val sizeof_cs : int
           end
         module Update :
           sig
+            val sizeof_cs : int
+            val get_cs_size : Cstruct.t -> Cstruct.uint16
+            val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs__type : Cstruct.t -> Cstruct.uint16
+            val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs_request_id : Cstruct.t -> Cstruct.uint32
+            val set_cs_request_id : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_nb_msgs : Cstruct.t -> Cstruct.uint32
+            val set_cs_nb_msgs : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_msg_number : Cstruct.t -> Cstruct.uint32
+            val set_cs_msg_number : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_symbol : Cstruct.t -> Cstruct.t
+            val copy_cs_symbol : Cstruct.t -> string
+            val set_cs_symbol : string -> int -> Cstruct.t -> unit
+            val blit_cs_symbol : Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_exchange : Cstruct.t -> Cstruct.t
+            val copy_cs_exchange : Cstruct.t -> string
+            val set_cs_exchange : string -> int -> Cstruct.t -> unit
+            val blit_cs_exchange : Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_previous_server_order_id : Cstruct.t -> Cstruct.t
+            val copy_cs_previous_server_order_id : Cstruct.t -> string
+            val set_cs_previous_server_order_id :
+              string -> int -> Cstruct.t -> unit
+            val blit_cs_previous_server_order_id :
+              Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_server_order_id : Cstruct.t -> Cstruct.t
+            val copy_cs_server_order_id : Cstruct.t -> string
+            val set_cs_server_order_id : string -> int -> Cstruct.t -> unit
+            val blit_cs_server_order_id :
+              Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_client_order_id : Cstruct.t -> Cstruct.t
+            val copy_cs_client_order_id : Cstruct.t -> string
+            val set_cs_client_order_id : string -> int -> Cstruct.t -> unit
+            val blit_cs_client_order_id :
+              Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_exchange_order_id : Cstruct.t -> Cstruct.t
+            val copy_cs_exchange_order_id : Cstruct.t -> string
+            val set_cs_exchange_order_id : string -> int -> Cstruct.t -> unit
+            val blit_cs_exchange_order_id :
+              Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_order_status : Cstruct.t -> Cstruct.uint32
+            val set_cs_order_status : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_order_update_reason : Cstruct.t -> Cstruct.uint32
+            val set_cs_order_update_reason :
+              Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_order_type : Cstruct.t -> Cstruct.uint32
+            val set_cs_order_type : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_buy_sell : Cstruct.t -> Cstruct.uint32
+            val set_cs_buy_sell : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_price1 : Cstruct.t -> Cstruct.uint64
+            val set_cs_price1 : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_price2 : Cstruct.t -> Cstruct.uint64
+            val set_cs_price2 : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_tif : Cstruct.t -> Cstruct.uint32
+            val set_cs_tif : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs___padding : Cstruct.t -> Cstruct.uint32
+            val set_cs___padding : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_good_till_ts : Cstruct.t -> Cstruct.uint64
+            val set_cs_good_till_ts : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_order_qty : Cstruct.t -> Cstruct.uint64
+            val set_cs_order_qty : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_filled_qty : Cstruct.t -> Cstruct.uint64
+            val set_cs_filled_qty : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_remaining_qty : Cstruct.t -> Cstruct.uint64
+            val set_cs_remaining_qty : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_avgfillprice : Cstruct.t -> Cstruct.uint64
+            val set_cs_avgfillprice : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_lastfillprice : Cstruct.t -> Cstruct.uint64
+            val set_cs_lastfillprice : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_lastfilldatetime : Cstruct.t -> Cstruct.uint64
+            val set_cs_lastfilldatetime : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_lastfillqty : Cstruct.t -> Cstruct.uint64
+            val set_cs_lastfillqty : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_lastfillexecution_id : Cstruct.t -> Cstruct.t
+            val copy_cs_lastfillexecution_id : Cstruct.t -> string
+            val set_cs_lastfillexecution_id :
+              string -> int -> Cstruct.t -> unit
+            val blit_cs_lastfillexecution_id :
+              Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_trade_account : Cstruct.t -> Cstruct.t
+            val copy_cs_trade_account : Cstruct.t -> string
+            val set_cs_trade_account : string -> int -> Cstruct.t -> unit
+            val blit_cs_trade_account : Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_info_text : Cstruct.t -> Cstruct.t
+            val copy_cs_info_text : Cstruct.t -> string
+            val set_cs_info_text : string -> int -> Cstruct.t -> unit
+            val blit_cs_info_text : Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_no_orders : Cstruct.t -> Cstruct.uint8
+            val set_cs_no_orders : Cstruct.t -> Cstruct.uint8 -> unit
+            val get_cs_parent_server_order_id : Cstruct.t -> Cstruct.t
+            val copy_cs_parent_server_order_id : Cstruct.t -> string
+            val set_cs_parent_server_order_id :
+              string -> int -> Cstruct.t -> unit
+            val blit_cs_parent_server_order_id :
+              Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_oco_linked_order_server_order_id :
+              Cstruct.t -> Cstruct.t
+            val copy_cs_oco_linked_order_server_order_id :
+              Cstruct.t -> string
+            val set_cs_oco_linked_order_server_order_id :
+              string -> int -> Cstruct.t -> unit
+            val blit_cs_oco_linked_order_server_order_id :
+              Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_open_or_close : Cstruct.t -> Cstruct.uint32
+            val set_cs_open_or_close : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_previous_client_order_id : Cstruct.t -> Cstruct.t
+            val copy_cs_previous_client_order_id : Cstruct.t -> string
+            val set_cs_previous_client_order_id :
+              string -> int -> Cstruct.t -> unit
+            val blit_cs_previous_client_order_id :
+              Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_free_form_text : Cstruct.t -> Cstruct.t
+            val copy_cs_free_form_text : Cstruct.t -> string
+            val set_cs_free_form_text : string -> int -> Cstruct.t -> unit
+            val blit_cs_free_form_text :
+              Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_received_ts : Cstruct.t -> Cstruct.uint64
+            val set_cs_received_ts : Cstruct.t -> Cstruct.uint64 -> unit
+            val hexdump_cs_to_buffer :
+              Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+            val hexdump_cs : Cstruct.t -> unit
             val write :
               ?request_id:Cstruct.uint32 ->
               nb_msgs:int ->
@@ -1063,28 +2107,99 @@ module Trading :
               ?previous_client_order_id:Core.Std.String.t ->
               ?free_form_text:string ->
               ?received_ts:Core.Std.Time_ns.t -> Cstruct.t -> unit
-            val sizeof_cs : int
           end
         module Open :
           sig
             module Request :
               sig
-                type t = { id : int32; order : string; trade_account : string }
+                val sizeof_cs : int
+                val get_cs_size : Cstruct.t -> Cstruct.uint16
+                val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+                val get_cs__type : Cstruct.t -> Cstruct.uint16
+                val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+                val get_cs_request_id : Cstruct.t -> Cstruct.uint32
+                val set_cs_request_id : Cstruct.t -> Cstruct.uint32 -> unit
+                val get_cs_request_all_orders : Cstruct.t -> Cstruct.uint32
+                val set_cs_request_all_orders :
+                  Cstruct.t -> Cstruct.uint32 -> unit
+                val get_cs_server_order_id : Cstruct.t -> Cstruct.t
+                val copy_cs_server_order_id : Cstruct.t -> string
+                val set_cs_server_order_id :
+                  string -> int -> Cstruct.t -> unit
+                val blit_cs_server_order_id :
+                  Cstruct.t -> int -> Cstruct.t -> unit
+                val get_cs_trade_account : Cstruct.t -> Cstruct.t
+                val copy_cs_trade_account : Cstruct.t -> string
+                val set_cs_trade_account : string -> int -> Cstruct.t -> unit
+                val blit_cs_trade_account :
+                  Cstruct.t -> int -> Cstruct.t -> unit
+                val hexdump_cs_to_buffer :
+                  Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+                val hexdump_cs : Cstruct.t -> unit
+                type t = {
+                  id : int32;
+                  order : string;
+                  trade_account : string;
+                }
                 val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
                 val show : t -> Ppx_deriving_runtime.string
                 val t_of_sexp : Sexplib.Sexp.t -> t
                 val sexp_of_t : t -> Sexplib.Sexp.t
                 val create :
-                  id:int32 -> ?order:string -> ?trade_account:string -> unit -> t
+                  id:int32 ->
+                  ?order:string -> ?trade_account:string -> unit -> t
                 val read : Cstruct.t -> t
-                val sizeof_cs : int
               end
-            module Reject : REJECT_REQUEST
+            module Reject :
+              sig
+                val sizeof_cs : int
+                val get_cs_size : Cstruct.t -> Cstruct.uint16
+                val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+                val get_cs__type : Cstruct.t -> Cstruct.uint16
+                val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+                val get_cs_request_id : Cstruct.t -> Cstruct.uint32
+                val set_cs_request_id : Cstruct.t -> Cstruct.uint32 -> unit
+                val get_cs_reason : Cstruct.t -> Cstruct.t
+                val copy_cs_reason : Cstruct.t -> string
+                val set_cs_reason : string -> int -> Cstruct.t -> unit
+                val blit_cs_reason : Cstruct.t -> int -> Cstruct.t -> unit
+                val hexdump_cs_to_buffer :
+                  Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+                val hexdump_cs : Cstruct.t -> unit
+                val write :
+                  Cstruct.t ->
+                  request_id:Cstruct.uint32 ->
+                  ('a, unit, string, unit) format4 -> 'a
+              end
           end
         module Fills :
           sig
             module Request :
               sig
+                val sizeof_cs : int
+                val get_cs_size : Cstruct.t -> Cstruct.uint16
+                val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+                val get_cs__type : Cstruct.t -> Cstruct.uint16
+                val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+                val get_cs_request_id : Cstruct.t -> Cstruct.uint32
+                val set_cs_request_id : Cstruct.t -> Cstruct.uint32 -> unit
+                val get_cs_server_order_id : Cstruct.t -> Cstruct.t
+                val copy_cs_server_order_id : Cstruct.t -> string
+                val set_cs_server_order_id :
+                  string -> int -> Cstruct.t -> unit
+                val blit_cs_server_order_id :
+                  Cstruct.t -> int -> Cstruct.t -> unit
+                val get_cs_number_of_days : Cstruct.t -> Cstruct.uint32
+                val set_cs_number_of_days :
+                  Cstruct.t -> Cstruct.uint32 -> unit
+                val get_cs_trade_account : Cstruct.t -> Cstruct.t
+                val copy_cs_trade_account : Cstruct.t -> string
+                val set_cs_trade_account : string -> int -> Cstruct.t -> unit
+                val blit_cs_trade_account :
+                  Cstruct.t -> int -> Cstruct.t -> unit
+                val hexdump_cs_to_buffer :
+                  Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+                val hexdump_cs : Cstruct.t -> unit
                 type t = {
                   id : int32;
                   srv_order_id : string;
@@ -1101,9 +2216,83 @@ module Trading :
                   nb_of_days:int -> trade_account:string -> unit -> t
                 val read : Cstruct.t -> t
               end
-            module Reject : REJECT_REQUEST
+            module Reject :
+              sig
+                val sizeof_cs : int
+                val get_cs_size : Cstruct.t -> Cstruct.uint16
+                val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+                val get_cs__type : Cstruct.t -> Cstruct.uint16
+                val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+                val get_cs_request_id : Cstruct.t -> Cstruct.uint32
+                val set_cs_request_id : Cstruct.t -> Cstruct.uint32 -> unit
+                val get_cs_reason : Cstruct.t -> Cstruct.t
+                val copy_cs_reason : Cstruct.t -> string
+                val set_cs_reason : string -> int -> Cstruct.t -> unit
+                val blit_cs_reason : Cstruct.t -> int -> Cstruct.t -> unit
+                val hexdump_cs_to_buffer :
+                  Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+                val hexdump_cs : Cstruct.t -> unit
+                val write :
+                  Cstruct.t ->
+                  request_id:Cstruct.uint32 ->
+                  ('a, unit, string, unit) format4 -> 'a
+              end
             module Response :
               sig
+                val sizeof_cs : int
+                val get_cs_size : Cstruct.t -> Cstruct.uint16
+                val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+                val get_cs__type : Cstruct.t -> Cstruct.uint16
+                val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+                val get_cs_request_id : Cstruct.t -> Cstruct.uint32
+                val set_cs_request_id : Cstruct.t -> Cstruct.uint32 -> unit
+                val get_cs_nb_msgs : Cstruct.t -> Cstruct.uint32
+                val set_cs_nb_msgs : Cstruct.t -> Cstruct.uint32 -> unit
+                val get_cs_msg_number : Cstruct.t -> Cstruct.uint32
+                val set_cs_msg_number : Cstruct.t -> Cstruct.uint32 -> unit
+                val get_cs_symbol : Cstruct.t -> Cstruct.t
+                val copy_cs_symbol : Cstruct.t -> string
+                val set_cs_symbol : string -> int -> Cstruct.t -> unit
+                val blit_cs_symbol : Cstruct.t -> int -> Cstruct.t -> unit
+                val get_cs_exchange : Cstruct.t -> Cstruct.t
+                val copy_cs_exchange : Cstruct.t -> string
+                val set_cs_exchange : string -> int -> Cstruct.t -> unit
+                val blit_cs_exchange : Cstruct.t -> int -> Cstruct.t -> unit
+                val get_cs_server_order_id : Cstruct.t -> Cstruct.t
+                val copy_cs_server_order_id : Cstruct.t -> string
+                val set_cs_server_order_id :
+                  string -> int -> Cstruct.t -> unit
+                val blit_cs_server_order_id :
+                  Cstruct.t -> int -> Cstruct.t -> unit
+                val get_cs_buy_sell : Cstruct.t -> Cstruct.uint32
+                val set_cs_buy_sell : Cstruct.t -> Cstruct.uint32 -> unit
+                val get_cs___padding : Cstruct.t -> Cstruct.uint32
+                val set_cs___padding : Cstruct.t -> Cstruct.uint32 -> unit
+                val get_cs_price : Cstruct.t -> Cstruct.uint64
+                val set_cs_price : Cstruct.t -> Cstruct.uint64 -> unit
+                val get_cs_ts : Cstruct.t -> Cstruct.uint64
+                val set_cs_ts : Cstruct.t -> Cstruct.uint64 -> unit
+                val get_cs_qty : Cstruct.t -> Cstruct.uint64
+                val set_cs_qty : Cstruct.t -> Cstruct.uint64 -> unit
+                val get_cs_unique_exec_id : Cstruct.t -> Cstruct.t
+                val copy_cs_unique_exec_id : Cstruct.t -> string
+                val set_cs_unique_exec_id :
+                  string -> int -> Cstruct.t -> unit
+                val blit_cs_unique_exec_id :
+                  Cstruct.t -> int -> Cstruct.t -> unit
+                val get_cs_trade_account : Cstruct.t -> Cstruct.t
+                val copy_cs_trade_account : Cstruct.t -> string
+                val set_cs_trade_account : string -> int -> Cstruct.t -> unit
+                val blit_cs_trade_account :
+                  Cstruct.t -> int -> Cstruct.t -> unit
+                val get_cs_open_close : Cstruct.t -> Cstruct.uint32
+                val set_cs_open_close : Cstruct.t -> Cstruct.uint32 -> unit
+                val get_cs_no_order_fills : Cstruct.t -> Cstruct.uint8
+                val set_cs_no_order_fills :
+                  Cstruct.t -> Cstruct.uint8 -> unit
+                val hexdump_cs_to_buffer :
+                  Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+                val hexdump_cs : Cstruct.t -> unit
                 val write :
                   ?trade_account:Core.Std.String.t ->
                   ?no_order_fills:bool ->
@@ -1118,7 +2307,6 @@ module Trading :
                   ?open_close:open_or_close ->
                   ?p:float ->
                   ?v:float -> ?ts:Core.Std.Time_ns.t -> Cstruct.t -> unit
-                val sizeof_cs : int
               end
           end
       end
@@ -1126,6 +2314,20 @@ module Trading :
       sig
         module Request :
           sig
+            val sizeof_cs : int
+            val get_cs_size : Cstruct.t -> Cstruct.uint16
+            val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs__type : Cstruct.t -> Cstruct.uint16
+            val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs_request_id : Cstruct.t -> Cstruct.uint32
+            val set_cs_request_id : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_trade_account : Cstruct.t -> Cstruct.t
+            val copy_cs_trade_account : Cstruct.t -> string
+            val set_cs_trade_account : string -> int -> Cstruct.t -> unit
+            val blit_cs_trade_account : Cstruct.t -> int -> Cstruct.t -> unit
+            val hexdump_cs_to_buffer :
+              Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+            val hexdump_cs : Cstruct.t -> unit
             type t = { id : int32; trade_account : string; }
             val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
             val show : t -> Ppx_deriving_runtime.string
@@ -1133,11 +2335,68 @@ module Trading :
             val sexp_of_t : t -> Sexplib.Sexp.t
             val create : id:int32 -> trade_account:string -> unit -> t
             val read : Cstruct.t -> t
-            val sizeof_cs : int
           end
-        module Reject : REJECT_REQUEST
+        module Reject :
+          sig
+            val sizeof_cs : int
+            val get_cs_size : Cstruct.t -> Cstruct.uint16
+            val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs__type : Cstruct.t -> Cstruct.uint16
+            val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs_request_id : Cstruct.t -> Cstruct.uint32
+            val set_cs_request_id : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_reason : Cstruct.t -> Cstruct.t
+            val copy_cs_reason : Cstruct.t -> string
+            val set_cs_reason : string -> int -> Cstruct.t -> unit
+            val blit_cs_reason : Cstruct.t -> int -> Cstruct.t -> unit
+            val hexdump_cs_to_buffer :
+              Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+            val hexdump_cs : Cstruct.t -> unit
+            val write :
+              Cstruct.t ->
+              request_id:Cstruct.uint32 ->
+              ('a, unit, string, unit) format4 -> 'a
+          end
         module Update :
           sig
+            val sizeof_cs : int
+            val get_cs_size : Cstruct.t -> Cstruct.uint16
+            val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs__type : Cstruct.t -> Cstruct.uint16
+            val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs_request_id : Cstruct.t -> Cstruct.uint32
+            val set_cs_request_id : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_nb_msgs : Cstruct.t -> Cstruct.uint32
+            val set_cs_nb_msgs : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_msg_number : Cstruct.t -> Cstruct.uint32
+            val set_cs_msg_number : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_symbol : Cstruct.t -> Cstruct.t
+            val copy_cs_symbol : Cstruct.t -> string
+            val set_cs_symbol : string -> int -> Cstruct.t -> unit
+            val blit_cs_symbol : Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_exchange : Cstruct.t -> Cstruct.t
+            val copy_cs_exchange : Cstruct.t -> string
+            val set_cs_exchange : string -> int -> Cstruct.t -> unit
+            val blit_cs_exchange : Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_qty : Cstruct.t -> Cstruct.uint64
+            val set_cs_qty : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_avg_price : Cstruct.t -> Cstruct.uint64
+            val set_cs_avg_price : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_position_id : Cstruct.t -> Cstruct.t
+            val copy_cs_position_id : Cstruct.t -> string
+            val set_cs_position_id : string -> int -> Cstruct.t -> unit
+            val blit_cs_position_id : Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_trade_account : Cstruct.t -> Cstruct.t
+            val copy_cs_trade_account : Cstruct.t -> string
+            val set_cs_trade_account : string -> int -> Cstruct.t -> unit
+            val blit_cs_trade_account : Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_no_positions : Cstruct.t -> Cstruct.uint8
+            val set_cs_no_positions : Cstruct.t -> Cstruct.uint8 -> unit
+            val get_cs_unsolicited : Cstruct.t -> Cstruct.uint8
+            val set_cs_unsolicited : Cstruct.t -> Cstruct.uint8 -> unit
+            val hexdump_cs_to_buffer :
+              Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+            val hexdump_cs : Cstruct.t -> unit
             val write :
               ?request_id:Cstruct.uint32 ->
               ?trade_account:Core.Std.String.t ->
@@ -1148,7 +2407,6 @@ module Trading :
               ?symbol:Core.Std.String.t ->
               ?exchange:Core.Std.String.t ->
               ?p:float -> ?v:float -> Cstruct.t -> unit
-            val sizeof_cs : int
           end
       end
   end
@@ -1158,33 +2416,129 @@ module Account :
       sig
         module Request :
           sig
+            val sizeof_cs : int
+            val get_cs_size : Cstruct.t -> Cstruct.uint16
+            val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs__type : Cstruct.t -> Cstruct.uint16
+            val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs_request_id : Cstruct.t -> Cstruct.uint32
+            val set_cs_request_id : Cstruct.t -> Cstruct.uint32 -> unit
+            val hexdump_cs_to_buffer :
+              Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+            val hexdump_cs : Cstruct.t -> unit
             type t = { id : int32; }
             val create : id:int32 -> unit -> t
             val read : Cstruct.t -> t
-            val sizeof_cs : int
           end
         module Response :
           sig
+            val sizeof_cs : int
+            val get_cs_size : Cstruct.t -> Cstruct.uint16
+            val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs__type : Cstruct.t -> Cstruct.uint16
+            val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs_nb_msgs : Cstruct.t -> Cstruct.uint32
+            val set_cs_nb_msgs : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_msg_number : Cstruct.t -> Cstruct.uint32
+            val set_cs_msg_number : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_trade_account : Cstruct.t -> Cstruct.t
+            val copy_cs_trade_account : Cstruct.t -> string
+            val set_cs_trade_account : string -> int -> Cstruct.t -> unit
+            val blit_cs_trade_account : Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_request_id : Cstruct.t -> Cstruct.uint32
+            val set_cs_request_id : Cstruct.t -> Cstruct.uint32 -> unit
+            val hexdump_cs_to_buffer :
+              Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+            val hexdump_cs : Cstruct.t -> unit
             val write :
               msg_number:int ->
               nb_msgs:int ->
               trade_account:Core.Std.String.t ->
               request_id:Cstruct.uint32 -> Cstruct.t -> unit
-            val sizeof_cs : int
           end
       end
     module Balance :
       sig
         module Request :
           sig
+            val sizeof_cs : int
+            val get_cs_size : Cstruct.t -> Cstruct.uint16
+            val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs__type : Cstruct.t -> Cstruct.uint16
+            val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs_id : Cstruct.t -> Cstruct.uint32
+            val set_cs_id : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_trade_account : Cstruct.t -> Cstruct.t
+            val copy_cs_trade_account : Cstruct.t -> string
+            val set_cs_trade_account : string -> int -> Cstruct.t -> unit
+            val blit_cs_trade_account : Cstruct.t -> int -> Cstruct.t -> unit
+            val hexdump_cs_to_buffer :
+              Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+            val hexdump_cs : Cstruct.t -> unit
             type t = { id : int32; trade_account : string; }
             val create : id:int32 -> trade_account:string -> unit -> t
             val read : Cstruct.t -> t
-            val sizeof_cs : int
           end
-        module Reject : REJECT_REQUEST
+        module Reject :
+          sig
+            val sizeof_cs : int
+            val get_cs_size : Cstruct.t -> Cstruct.uint16
+            val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs__type : Cstruct.t -> Cstruct.uint16
+            val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs_request_id : Cstruct.t -> Cstruct.uint32
+            val set_cs_request_id : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_reason : Cstruct.t -> Cstruct.t
+            val copy_cs_reason : Cstruct.t -> string
+            val set_cs_reason : string -> int -> Cstruct.t -> unit
+            val blit_cs_reason : Cstruct.t -> int -> Cstruct.t -> unit
+            val hexdump_cs_to_buffer :
+              Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+            val hexdump_cs : Cstruct.t -> unit
+            val write :
+              Cstruct.t ->
+              request_id:Cstruct.uint32 ->
+              ('a, unit, string, unit) format4 -> 'a
+          end
         module Update :
           sig
+            val sizeof_cs : int
+            val get_cs_size : Cstruct.t -> Cstruct.uint16
+            val set_cs_size : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs__type : Cstruct.t -> Cstruct.uint16
+            val set_cs__type : Cstruct.t -> Cstruct.uint16 -> unit
+            val get_cs_request_id : Cstruct.t -> Cstruct.uint32
+            val set_cs_request_id : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_cash_balance : Cstruct.t -> Cstruct.uint64
+            val set_cs_cash_balance : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_balance_available : Cstruct.t -> Cstruct.uint64
+            val set_cs_balance_available :
+              Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_currency : Cstruct.t -> Cstruct.t
+            val copy_cs_currency : Cstruct.t -> string
+            val set_cs_currency : string -> int -> Cstruct.t -> unit
+            val blit_cs_currency : Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_trade_account : Cstruct.t -> Cstruct.t
+            val copy_cs_trade_account : Cstruct.t -> string
+            val set_cs_trade_account : string -> int -> Cstruct.t -> unit
+            val blit_cs_trade_account : Cstruct.t -> int -> Cstruct.t -> unit
+            val get_cs_securities_value : Cstruct.t -> Cstruct.uint64
+            val set_cs_securities_value : Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_margin_requirement : Cstruct.t -> Cstruct.uint64
+            val set_cs_margin_requirement :
+              Cstruct.t -> Cstruct.uint64 -> unit
+            val get_cs_nb_msgs : Cstruct.t -> Cstruct.uint32
+            val set_cs_nb_msgs : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_msg_number : Cstruct.t -> Cstruct.uint32
+            val set_cs_msg_number : Cstruct.t -> Cstruct.uint32 -> unit
+            val get_cs_no_account_balances : Cstruct.t -> Cstruct.uint8
+            val set_cs_no_account_balances :
+              Cstruct.t -> Cstruct.uint8 -> unit
+            val get_cs_unsolicited : Cstruct.t -> Cstruct.uint8
+            val set_cs_unsolicited : Cstruct.t -> Cstruct.uint8 -> unit
+            val hexdump_cs_to_buffer :
+              Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
+            val hexdump_cs : Cstruct.t -> unit
             val write :
               ?request_id:Cstruct.uint32 ->
               ?cash_balance:float ->
@@ -1195,7 +2549,6 @@ module Account :
               ?margin_requirement:float ->
               nb_msgs:int ->
               msg_number:int -> ?no_account_balance:bool -> Cstruct.t -> unit
-            val sizeof_cs : int
           end
       end
   end
