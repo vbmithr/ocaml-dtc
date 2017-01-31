@@ -215,16 +215,16 @@ module File = struct
   let of_scid ic oc =
     let open Scid in
     let buf = B.create size in
-    let d = D.make @@ `Channel ic in
+    let d = D.make @@ Channel ic in
     let rec loop nb_records = match D.decode d with
-      | `R r ->
+      | R r ->
         let t = of_scid_record r in
         Bytes.write ~buf_key:key ~buf_data:data t;
         Out_channel.output oc buf 0 size;
         loop (succ nb_records)
-      | `End -> nb_records
-      | `Error e -> failwith (D.show_e e)
-      | `Await -> failwith "`Await"
+      | End -> nb_records
+      | Error e -> failwith (Format.asprintf "%a" D.pp_error e)
+      | Await -> failwith "Await"
     in
     Out_channel.output_string oc hdr;
     loop 0
@@ -293,9 +293,9 @@ module File = struct
     let open Scid in
     let buf = B.create size in
     In_channel.with_file ~binary:true fn ~f:(fun ic ->
-        let d = D.make @@ `Channel ic in
+        let d = D.make @@ Channel ic in
         let rec loop nb_records = match D.decode d with
-          | `R r ->
+          | R r ->
             let t = of_scid_record r in
             if Time_ns.(t.ts > offset) then begin
               Bytes.write ~buf_key:key ~buf_data:data t;
@@ -303,9 +303,9 @@ module File = struct
               loop @@ succ nb_records
             end
             else loop nb_records
-          | `End -> nb_records
-          | `Error e -> failwith @@ D.show_e e
-          | `Await -> failwith "`Await"
+          | End -> nb_records
+          | Error e -> failwith (Format.asprintf "%a" D.pp_error e)
+          | Await -> failwith "Await"
         in
         loop 0
       )
