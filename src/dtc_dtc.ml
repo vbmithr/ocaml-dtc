@@ -1,4 +1,4 @@
-open Core.Std
+open Core
 
 let int_of_bool = function
   | false -> 0

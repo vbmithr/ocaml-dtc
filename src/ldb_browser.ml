@@ -1,4 +1,4 @@
-open Core.Std
+open Core
 open Dtc
 
 module LevelDB = Tick.MakeLDB(LevelDB)

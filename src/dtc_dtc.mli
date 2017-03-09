@@ -1,11 +1,11 @@
 val int_of_bool : bool -> int
 val bool_of_int : int -> bool
-val datetime64_of_ts : Core.Std.Time_ns.t -> Core.Std.Int64.t
-val datetimeMs_of_ts : Core.Std.Time_ns.t -> float
-val datetime32_of_ts : Core.Std.Time_ns.t -> Core.Std.Int32.t
-val ts_of_datetime64 : Core.Std.Int64.t -> Core.Std.Time_ns.t
-val ts_of_datetime32 : Core.Std.Int32.t -> Core.Std.Time_ns.t
-val ts_of_datetimeMs : float -> Core.Std.Time_ns.t
+val datetime64_of_ts : Core.Time_ns.t -> Core.Int64.t
+val datetimeMs_of_ts : Core.Time_ns.t -> float
+val datetime32_of_ts : Core.Time_ns.t -> Core.Int32.t
+val ts_of_datetime64 : Core.Int64.t -> Core.Time_ns.t
+val ts_of_datetime32 : Core.Int32.t -> Core.Time_ns.t
+val ts_of_datetimeMs : float -> Core.Time_ns.t
 val current_version : int
 module Lengths :
   sig
@@ -201,18 +201,18 @@ val side_to_enum : side -> int
 val side_of_enum : int -> side option
 val side_of_sexp : Sexplib.Sexp.t -> side
 val sexp_of_side : side -> Sexplib.Sexp.t
-val bin_shape_side : Core.Std.Bin_prot.Shape.t
+val bin_shape_side : Core.Bin_prot.Shape.t
 val bin_size_side : side -> int
 val bin_write_side :
   Bin_prot.Common.buf ->
   pos:Bin_prot.Common.pos -> side -> Bin_prot.Common.pos
-val bin_writer_side : side Core.Std.Bin_prot.Type_class.writer
+val bin_writer_side : side Core.Bin_prot.Type_class.writer
 val __bin_read_side__ :
-  'a -> pos_ref:Core.Std.Bin_prot.Common.pos Core.Std.ref -> 'b -> 'c
+  'a -> pos_ref:Core.Bin_prot.Common.pos Core.ref -> 'b -> 'c
 val bin_read_side :
   Bin_prot.Common.buf -> pos_ref:Bin_prot.Common.pos_ref -> side
-val bin_reader_side : side Core.Std.Bin_prot.Type_class.reader
-val bin_side : side Core.Std.Bin_prot.Type_class.t
+val bin_reader_side : side Core.Bin_prot.Type_class.reader
+val bin_side : side Core.Bin_prot.Type_class.t
 val other_side : side -> side
 type put_or_call = Call | Put
 val pp_put_or_call :
@@ -354,8 +354,8 @@ val max_security : int
 val security_to_enum : security -> int
 val security_of_enum : int -> security option
 val option_to_enum : ('a -> int) -> 'a option -> int
-val bytes_with_msg : Core.Std.String.t -> int -> Core.Std.String.t
-val cstring_of_cstruct : Cstruct.t -> Core.Std.String.t
+val bytes_with_msg : Core.String.t -> int -> Core.String.t
+val cstring_of_cstruct : Cstruct.t -> Core.String.t
 module RejectSymbol :
   sig
     val sizeof_cs : int
@@ -379,15 +379,14 @@ module type REJECT_REQUEST =
     val sizeof_cs : int
     val write :
       Cstruct.t ->
-      request_id:Core.Std.Int32.t ->
-      ('a, unit, string, unit) Core.Std.format4 -> 'a
+      request_id:Core.Int32.t -> ('a, unit, string, unit) Core.format4 -> 'a
   end
 module type REJECT_SYMBOL_REQUEST =
   sig
     val sizeof_cs : int
     val write :
       Cstruct.t ->
-      symbol_id:int -> ('a, unit, string, unit) Core.Std.format4 -> 'a
+      symbol_id:int -> ('a, unit, string, unit) Core.format4 -> 'a
   end
 module RejectRequest :
   functor (M : MSG) ->
@@ -688,7 +687,7 @@ module Logon :
         val create : ?dropped_msgs:int -> ?ts:int64 -> unit -> t
         val read : Cstruct.t -> t
         val write :
-          ?dropped_msgs:int -> ?ts:Core.Std.Time_ns.t -> Cstruct.t -> unit
+          ?dropped_msgs:int -> ?ts:Core.Time_ns.t -> Cstruct.t -> unit
       end
     module Logoff :
       sig
@@ -836,10 +835,10 @@ module MarketData :
           ask_qty : float;
           last_trade_p : float;
           last_trade_v : float;
-          last_trade_ts : Core.Std.Time_ns.t;
-          bid_ask_ts : Core.Std.Time_ns.t;
-          session_settlement_ts : Core.Std.Time_ns.t;
-          trading_session_ts : Core.Std.Time_ns.t;
+          last_trade_ts : Core.Time_ns.t;
+          bid_ask_ts : Core.Time_ns.t;
+          session_settlement_ts : Core.Time_ns.t;
+          trading_session_ts : Core.Time_ns.t;
         }
         val pp :
           Base__.Import.Caml.Format.formatter ->
@@ -849,23 +848,23 @@ module MarketData :
         val sexp_of_t : t -> Sexplib.Sexp.t
         val create :
           symbol_id:int ->
-          ?session_settlement_price:Core.Std.Float.t ->
-          ?session_o:Core.Std.Float.t ->
-          ?session_h:Core.Std.Float.t ->
-          ?session_l:Core.Std.Float.t ->
-          ?session_v:Core.Std.Float.t ->
+          ?session_settlement_price:Core.Float.t ->
+          ?session_o:Core.Float.t ->
+          ?session_h:Core.Float.t ->
+          ?session_l:Core.Float.t ->
+          ?session_v:Core.Float.t ->
           ?session_n:int32 ->
           ?open_interest:int32 ->
-          ?bid:Core.Std.Float.t ->
-          ?ask:Core.Std.Float.t ->
-          ?bid_qty:Core.Std.Float.t ->
-          ?ask_qty:Core.Std.Float.t ->
-          ?last_trade_p:Core.Std.Float.t ->
-          ?last_trade_v:Core.Std.Float.t ->
-          ?last_trade_ts:Core.Std.Time_ns.t ->
-          ?bid_ask_ts:Core.Std.Time_ns.t ->
-          ?session_settlement_ts:Core.Std.Time_ns.t ->
-          ?trading_session_ts:Core.Std.Time_ns.t -> unit -> t
+          ?bid:Core.Float.t ->
+          ?ask:Core.Float.t ->
+          ?bid_qty:Core.Float.t ->
+          ?ask_qty:Core.Float.t ->
+          ?last_trade_p:Core.Float.t ->
+          ?last_trade_v:Core.Float.t ->
+          ?last_trade_ts:Core.Time_ns.t ->
+          ?bid_ask_ts:Core.Time_ns.t ->
+          ?session_settlement_ts:Core.Time_ns.t ->
+          ?trading_session_ts:Core.Time_ns.t -> unit -> t
         val to_cstruct : Cstruct.t -> t -> unit
       end
     module UpdateTrade :
@@ -893,7 +892,7 @@ module MarketData :
           side : side option;
           p : float;
           v : float;
-          ts : Core.Std.Time_ns.t;
+          ts : Core.Time_ns.t;
         }
         val pp :
           Base__.Import.Caml.Format.formatter ->
@@ -903,14 +902,13 @@ module MarketData :
         val sexp_of_t : t -> Sexplib.Sexp.t
         val create :
           symbol_id:int ->
-          ?side:side ->
-          p:float -> v:float -> ts:Core.Std.Time_ns.t -> unit -> t
+          ?side:side -> p:float -> v:float -> ts:Core.Time_ns.t -> unit -> t
         val to_cstruct : Cstruct.t -> t -> unit
         val update_cstruct : symbol_id:Cstruct.uint16 -> Cstruct.t -> unit
         val write :
           symbol_id:Cstruct.uint16 ->
           ?side:side ->
-          p:float -> v:float -> ts:Core.Std.Time_ns.t -> Cstruct.t -> unit
+          p:float -> v:float -> ts:Core.Time_ns.t -> Cstruct.t -> unit
       end
     module UpdateBidAsk :
       sig
@@ -943,7 +941,7 @@ module MarketData :
           symbol_id:Cstruct.uint16 ->
           bid:float ->
           bid_qty:float ->
-          ask:float -> ask_qty:float -> ts:Core.Std.Time_ns.t -> unit
+          ask:float -> ask_qty:float -> ts:Core.Time_ns.t -> unit
       end
     module UpdateSession :
       sig
@@ -1435,8 +1433,8 @@ module HistoricalPriceData :
           symbol : string;
           exchange : string;
           record_interval : int;
-          start_ts : Core.Std.Time_ns.t;
-          end_ts : Core.Std.Time_ns.t;
+          start_ts : Core.Time_ns.t;
+          end_ts : Core.Time_ns.t;
           max_days : int;
           zlib : bool;
           request_dividend_adjusted_stock_data : bool;
@@ -1453,8 +1451,8 @@ module HistoricalPriceData :
           symbol:string ->
           exchange:string ->
           ?record_interval:int ->
-          ?start_ts:Core.Std.Time_ns.t ->
-          ?end_ts:Core.Std.Time_ns.t ->
+          ?start_ts:Core.Time_ns.t ->
+          ?end_ts:Core.Time_ns.t ->
           ?max_days:int ->
           ?zlib:bool ->
           ?request_dividend_adjusted_stock_data:bool ->
@@ -1557,7 +1555,7 @@ module HistoricalPriceData :
         val hexdump_cs : Cstruct.t -> unit
         type t = {
           request_id : int32;
-          start_ts : Core.Std.Time_ns.t;
+          start_ts : Core.Time_ns.t;
           o : float;
           h : float;
           l : float;
@@ -1576,7 +1574,7 @@ module HistoricalPriceData :
         val sexp_of_t : t -> Sexplib.Sexp.t
         val create :
           request_id:int32 ->
-          ?start_ts:Core.Std.Time_ns.t ->
+          ?start_ts:Core.Time_ns.t ->
           ?o:float ->
           ?h:float ->
           ?l:float ->
@@ -1615,7 +1613,7 @@ module HistoricalPriceData :
         val write :
           ?final:bool ->
           request_id:Cstruct.uint32 ->
-          ts:Core.Std.Time_ns.t ->
+          ts:Core.Time_ns.t ->
           p:float -> v:float -> ?side:side -> Cstruct.t -> unit
       end
   end
@@ -1691,7 +1689,7 @@ module Trading :
               p2 : float;
               qty : float;
               tif : TimeInForce.t option;
-              good_till_ts : Core.Std.Time_ns.t;
+              good_till_ts : Core.Time_ns.t;
               automated : bool;
               parent : bool;
               text : string;
@@ -1714,7 +1712,7 @@ module Trading :
               p2:float ->
               qty:float ->
               ?tif:TimeInForce.t ->
-              ?good_till_ts:Core.Std.Time_ns.t ->
+              ?good_till_ts:Core.Time_ns.t ->
               automated:bool -> parent:bool -> text:string -> unit -> t
             val read : Cstruct.t -> t
           end
@@ -1812,7 +1810,7 @@ module Trading :
               p2_2 : float;
               qty_2 : float;
               tif : TimeInForce.t option;
-              good_till_ts : Core.Std.Time_ns.t;
+              good_till_ts : Core.Time_ns.t;
               open_close : open_or_close option;
               partial_fill_handling : partial_fill option;
               automated : bool;
@@ -1842,7 +1840,7 @@ module Trading :
               p2_2:float ->
               qty_2:float ->
               ?tif:TimeInForce.t ->
-              ?good_till_ts:Core.Std.Time_ns.t ->
+              ?good_till_ts:Core.Time_ns.t ->
               ?open_close:open_or_close ->
               ?partial_fill_handling:partial_fill ->
               automated:bool -> parent:string -> text:string -> unit -> t
@@ -1900,7 +1898,7 @@ module Trading :
               p2_set : bool;
               ord_type : OrderType.t option;
               tif : TimeInForce.t option;
-              good_till_ts : Core.Std.Time_ns.t;
+              good_till_ts : Core.Time_ns.t;
             }
             val pp :
               Base__.Import.Caml.Format.formatter ->
@@ -1917,8 +1915,7 @@ module Trading :
               p1_set:bool ->
               p2_set:bool ->
               ?ord_type:OrderType.t ->
-              ?tif:TimeInForce.t ->
-              ?good_till_ts:Core.Std.Time_ns.t -> unit -> t
+              ?tif:TimeInForce.t -> ?good_till_ts:Core.Time_ns.t -> unit -> t
             val read : Cstruct.t -> t
           end
         module Cancel :
@@ -2076,37 +2073,37 @@ module Trading :
               ?request_id:Cstruct.uint32 ->
               nb_msgs:int ->
               msg_number:int ->
-              ?symbol:Core.Std.String.t ->
-              ?exchange:Core.Std.String.t ->
-              ?prev_srv_ord_id:Core.Std.String.t ->
-              ?cli_ord_id:Core.Std.String.t ->
-              ?srv_ord_id:Core.Std.String.t ->
-              ?xch_ord_id:Core.Std.String.t ->
+              ?symbol:Core.String.t ->
+              ?exchange:Core.String.t ->
+              ?prev_srv_ord_id:Core.String.t ->
+              ?cli_ord_id:Core.String.t ->
+              ?srv_ord_id:Core.String.t ->
+              ?xch_ord_id:Core.String.t ->
               ?status:OrderStatus.t ->
               ?reason:UpdateReason.t ->
               ?ord_type:OrderType.t ->
               ?side:side ->
-              ?p1:Core.Std.Float.t ->
-              ?p2:Core.Std.Float.t ->
+              ?p1:Core.Float.t ->
+              ?p2:Core.Float.t ->
               ?tif:TimeInForce.t ->
-              ?good_till_ts:Core.Std.Time_ns.t ->
-              ?order_qty:Core.Std.Float.t ->
-              ?filled_qty:Core.Std.Float.t ->
-              ?remaining_qty:Core.Std.Float.t ->
-              ?avg_fill_p:Core.Std.Float.t ->
-              ?last_fill_p:Core.Std.Float.t ->
-              ?last_fill_ts:Core.Std.Time_ns.t ->
-              ?last_fill_qty:Core.Std.Float.t ->
-              ?last_fill_exec_id:Core.Std.String.t ->
-              ?trade_account:Core.Std.String.t ->
-              ?info_text:Core.Std.String.t ->
+              ?good_till_ts:Core.Time_ns.t ->
+              ?order_qty:Core.Float.t ->
+              ?filled_qty:Core.Float.t ->
+              ?remaining_qty:Core.Float.t ->
+              ?avg_fill_p:Core.Float.t ->
+              ?last_fill_p:Core.Float.t ->
+              ?last_fill_ts:Core.Time_ns.t ->
+              ?last_fill_qty:Core.Float.t ->
+              ?last_fill_exec_id:Core.String.t ->
+              ?trade_account:Core.String.t ->
+              ?info_text:Core.String.t ->
               ?no_orders:bool ->
-              ?parent_srv_ord_id:Core.Std.String.t ->
-              ?oco_linked_ord_srv_ord_id:Core.Std.String.t ->
+              ?parent_srv_ord_id:Core.String.t ->
+              ?oco_linked_ord_srv_ord_id:Core.String.t ->
               ?open_or_close:open_or_close ->
-              ?previous_client_order_id:Core.Std.String.t ->
+              ?previous_client_order_id:Core.String.t ->
               ?free_form_text:string ->
-              ?received_ts:Core.Std.Time_ns.t -> Cstruct.t -> unit
+              ?received_ts:Core.Time_ns.t -> Cstruct.t -> unit
           end
         module Open :
           sig
@@ -2294,19 +2291,19 @@ module Trading :
                   Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
                 val hexdump_cs : Cstruct.t -> unit
                 val write :
-                  ?trade_account:Core.Std.String.t ->
+                  ?trade_account:Core.String.t ->
                   ?no_order_fills:bool ->
                   nb_msgs:int ->
                   msg_number:int ->
                   request_id:Cstruct.uint32 ->
-                  ?symbol:Core.Std.String.t ->
-                  ?exchange:Core.Std.String.t ->
-                  ?srv_order_id:Core.Std.String.t ->
-                  ?exec_id:Core.Std.String.t ->
+                  ?symbol:Core.String.t ->
+                  ?exchange:Core.String.t ->
+                  ?srv_order_id:Core.String.t ->
+                  ?exec_id:Core.String.t ->
                   ?side:side ->
                   ?open_close:open_or_close ->
                   ?p:float ->
-                  ?v:float -> ?ts:Core.Std.Time_ns.t -> Cstruct.t -> unit
+                  ?v:float -> ?ts:Core.Time_ns.t -> Cstruct.t -> unit
               end
           end
       end
@@ -2399,13 +2396,13 @@ module Trading :
             val hexdump_cs : Cstruct.t -> unit
             val write :
               ?request_id:Cstruct.uint32 ->
-              ?trade_account:Core.Std.String.t ->
-              ?position_id:Core.Std.String.t ->
+              ?trade_account:Core.String.t ->
+              ?position_id:Core.String.t ->
               ?no_positions:bool ->
               nb_msgs:int ->
               msg_number:int ->
-              ?symbol:Core.Std.String.t ->
-              ?exchange:Core.Std.String.t ->
+              ?symbol:Core.String.t ->
+              ?exchange:Core.String.t ->
               ?p:float -> ?v:float -> Cstruct.t -> unit
           end
       end
@@ -2453,7 +2450,7 @@ module Account :
             val write :
               msg_number:int ->
               nb_msgs:int ->
-              trade_account:Core.Std.String.t ->
+              trade_account:Core.String.t ->
               request_id:Cstruct.uint32 -> Cstruct.t -> unit
           end
       end
@@ -2543,8 +2540,8 @@ module Account :
               ?request_id:Cstruct.uint32 ->
               ?cash_balance:float ->
               ?balance_available:float ->
-              ?currency:Core.Std.String.t ->
-              ?trade_account:Core.Std.String.t ->
+              ?currency:Core.String.t ->
+              ?trade_account:Core.String.t ->
               ?securities_value:float ->
               ?margin_requirement:float ->
               nb_msgs:int ->
