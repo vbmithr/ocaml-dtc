@@ -426,36 +426,83 @@ module Logon = struct
         heartbeat_interval: uint32_t;
         trade_mode: uint32_t;
         trade_account: uint8_t [@len 32];
-        hardware_indentifier: uint8_t [@len 64];
+        hardware_id: uint8_t [@len 64];
         client_name: uint8_t [@len 32]
       } [@@little_endian]]
 
     type t = {
-      protocol_version: int32;
+      protocol_version: int;
       username: string;
       password: string [@opaque];
       general_text_data: string;
       integer_1: int32;
       integer_2: int32;
-      heartbeat_interval: int32;
+      heartbeat_interval: int;
       trade_mode: TradeMode.t option;
       trade_account: string;
       hardware_id: string;
       client_name: string;
     } [@@deriving show,sexp,create]
 
+    let create
+        ?(protocol_version=7)
+        ?(username="")
+        ?(password="")
+        ?(general_text_data="")
+        ?(integer_1=0l)
+        ?(integer_2=0l)
+        ?(heartbeat_interval=30)
+        ?trade_mode
+        ?(trade_account="")
+        ?(hardware_id="")
+        ?(client_name="") () = {
+      protocol_version ; username ; password ;
+      general_text_data ; integer_1 ; integer_2 ;
+      heartbeat_interval ; trade_mode ; trade_account ;
+      hardware_id ; client_name
+    }
+
+    let write
+        ?(protocol_version=7)
+        ?(username="")
+        ?(password="")
+        ?(general_text_data="")
+        ?(integer_1=0l)
+        ?(integer_2=0l)
+        ?(heartbeat_interval=30)
+        ?trade_mode
+        ?(trade_account="")
+        ?(hardware_id="")
+        ?(client_name="") cs =
+      let trade_mode = match trade_mode with
+      | None -> 0l
+      | Some tm -> Int32.of_int_exn (TradeMode.to_enum tm) in
+      set_cs_size cs sizeof_cs ;
+      set_cs__type cs (msg_to_enum LogonRequest) ;
+      set_cs_protocol_version cs 7l ;
+      set_cs_username (bytes_with_msg username 32) 0 cs ;
+      set_cs_password (bytes_with_msg password 32) 0 cs ;
+      set_cs_general_text_data (bytes_with_msg password 64) 0 cs ;
+      set_cs_integer_1 cs integer_1 ;
+      set_cs_integer_2 cs integer_2 ;
+      set_cs_heartbeat_interval cs (Int32.of_int_exn heartbeat_interval) ;
+      set_cs_trade_mode cs trade_mode ;
+      set_cs_trade_account (bytes_with_msg trade_account 32) 0 cs ;
+      set_cs_hardware_id (bytes_with_msg hardware_id 64) 0 cs ;
+      set_cs_client_name (bytes_with_msg client_name 64) 0 cs
+
     let read cs =
       create
-        ~protocol_version:(get_cs_protocol_version cs)
+        ~protocol_version:(get_cs_protocol_version cs |> Int32.to_int_exn)
         ~username:(get_cs_username cs |> cstring_of_cstruct)
         ~password:(get_cs_password cs |> cstring_of_cstruct)
         ~general_text_data:(get_cs_general_text_data cs |> cstring_of_cstruct)
         ~integer_1:(get_cs_integer_1 cs)
         ~integer_2:(get_cs_integer_2 cs)
-        ~heartbeat_interval:(get_cs_heartbeat_interval cs)
+        ~heartbeat_interval:(get_cs_heartbeat_interval cs |> Int32.to_int_exn)
         ?trade_mode:(get_cs_trade_mode cs |> Int32.to_int_exn |> TradeMode.of_enum)
         ~trade_account:(get_cs_trade_account cs |> cstring_of_cstruct)
-        ~hardware_id:(get_cs_hardware_indentifier cs |> cstring_of_cstruct)
+        ~hardware_id:(get_cs_hardware_id cs |> cstring_of_cstruct)
         ~client_name:(get_cs_client_name cs |> cstring_of_cstruct) ()
   end
 

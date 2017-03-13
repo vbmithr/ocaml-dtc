@@ -9,6 +9,7 @@ let () =
   Pkg.describe "dtc" @@ fun c ->
   let leveldb = Conf.value c leveldb in
   Ok [
-    Pkg.mllib "src/dtc.mllib";
-    Pkg.bin ~cond:leveldb "src/ldb_browser"
+    Pkg.mllib "src/dtc.mllib" ;
+    Pkg.bin ~cond:leveldb "src/ldb_browser" ;
+    Pkg.bin "src/hddownload" ;
   ]

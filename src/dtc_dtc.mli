@@ -496,11 +496,10 @@ module Logon :
         val copy_cs_trade_account : Cstruct.t -> string
         val set_cs_trade_account : string -> int -> Cstruct.t -> unit
         val blit_cs_trade_account : Cstruct.t -> int -> Cstruct.t -> unit
-        val get_cs_hardware_indentifier : Cstruct.t -> Cstruct.t
-        val copy_cs_hardware_indentifier : Cstruct.t -> string
-        val set_cs_hardware_indentifier : string -> int -> Cstruct.t -> unit
-        val blit_cs_hardware_indentifier :
-          Cstruct.t -> int -> Cstruct.t -> unit
+        val get_cs_hardware_id : Cstruct.t -> Cstruct.t
+        val copy_cs_hardware_id : Cstruct.t -> string
+        val set_cs_hardware_id : string -> int -> Cstruct.t -> unit
+        val blit_cs_hardware_id : Cstruct.t -> int -> Cstruct.t -> unit
         val get_cs_client_name : Cstruct.t -> Cstruct.t
         val copy_cs_client_name : Cstruct.t -> string
         val set_cs_client_name : string -> int -> Cstruct.t -> unit
@@ -509,13 +508,13 @@ module Logon :
           Base__.Import0.Caml.Buffer.t -> Cstruct.t -> unit
         val hexdump_cs : Cstruct.t -> unit
         type t = {
-          protocol_version : int32;
+          protocol_version : int;
           username : string;
           password : string;
           general_text_data : string;
           integer_1 : int32;
           integer_2 : int32;
-          heartbeat_interval : int32;
+          heartbeat_interval : int;
           trade_mode : TradeMode.t option;
           trade_account : string;
           hardware_id : string;
@@ -526,16 +525,28 @@ module Logon :
         val t_of_sexp : Sexplib.Sexp.t -> t
         val sexp_of_t : t -> Sexplib.Sexp.t
         val create :
-          protocol_version:int32 ->
-          username:string ->
-          password:string ->
-          general_text_data:string ->
-          integer_1:int32 ->
-          integer_2:int32 ->
-          heartbeat_interval:int32 ->
+          ?protocol_version:int ->
+          ?username:string ->
+          ?password:string ->
+          ?general_text_data:string ->
+          ?integer_1:int32 ->
+          ?integer_2:int32 ->
+          ?heartbeat_interval:int ->
           ?trade_mode:TradeMode.t ->
-          trade_account:string ->
-          hardware_id:string -> client_name:string -> unit -> t
+          ?trade_account:string ->
+          ?hardware_id:string -> ?client_name:string -> unit -> t
+        val write :
+          ?protocol_version:int ->
+          ?username:Core.String.t ->
+          ?password:Core.String.t ->
+          ?general_text_data:string ->
+          ?integer_1:Cstruct.uint32 ->
+          ?integer_2:Cstruct.uint32 ->
+          ?heartbeat_interval:int ->
+          ?trade_mode:TradeMode.t ->
+          ?trade_account:Core.String.t ->
+          ?hardware_id:Core.String.t ->
+          ?client_name:Core.String.t -> Cstruct.t -> unit
         val read : Cstruct.t -> t
       end
     module Response :
