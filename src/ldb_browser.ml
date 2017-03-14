@@ -50,7 +50,6 @@ let show tail max_ticks binsize (dbpath, show) () =
     sum_p := !sum_p + p;
     sum_v := !sum_v + v;
     avg_v := !sum_v / !nb_read;
-    var_v := !var_v + Int.pow (v - !avg_v) 2;
     if !nb_read > 0 then begin
       if !prev_side <> side then begin
         incr nb_clusters;
