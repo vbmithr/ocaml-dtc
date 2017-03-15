@@ -29,6 +29,7 @@ val of_scid_record : Scid.R.t -> t
 module type LDB = sig
   exception Error of string
   type db
+  type iterator
   type writebatch
   type comparator
   type env
@@ -61,6 +62,24 @@ module type LDB = sig
     val delete : writebatch -> string -> unit
     val delete_substring : writebatch -> string -> int -> int -> unit
     val write : db -> ?sync:bool -> writebatch -> unit
+  end
+  module Iterator : sig
+    val make : ?fill_cache:bool -> db -> iterator
+    val close : iterator -> unit
+    val seek_to_first : iterator -> unit
+    val seek_to_last : iterator -> unit
+    val seek: iterator -> string -> int -> int -> unit
+    val next : iterator -> unit
+    val prev : iterator -> unit
+    val valid : iterator -> bool
+    val fill_key : iterator -> string ref -> int
+    val fill_value : iterator -> string ref -> int
+    val get_key : iterator -> string
+    val get_value : iterator -> string
+    val iter : (string -> string -> bool) -> iterator -> unit
+    val rev_iter : (string -> string -> bool) -> iterator -> unit
+    val iter_from : (string -> string -> bool) -> iterator -> string -> unit
+    val rev_iter_from : (string -> string -> bool) -> iterator -> string -> unit
   end
 end
 
