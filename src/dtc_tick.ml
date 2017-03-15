@@ -2,7 +2,7 @@ open Core
 
 type t = {
   ts: Time_ns.t;
-  side: Dtc_dtc.side option;
+  side: Dtc_dtc.Side.t option;
   p: Int63.t;
   v: Int63.t;
 } [@@deriving create, sexp, bin_io]
@@ -11,14 +11,14 @@ let compare t t' = compare t#p t'#p
 
 let side_of_int64 = function
   | 0L -> None
-  | 1L -> Some Dtc_dtc.Buy
-  | 2L -> Some Sell
+  | 1L -> Some `Buy
+  | 2L -> Some `Sell
   | _ -> invalid_arg "side_of_int64"
 
 let int64_of_side = function
   | None -> 0L
-  | Some Dtc_dtc.Buy -> 1L
-  | Some Sell -> 2L
+  | Some `Buy -> 1L
+  | Some `Sell -> 2L
 
 let int64_of_v_side v side =
   let open Int64 in
@@ -104,7 +104,7 @@ let of_scid_record r =
     ~ts:(ts |> Int63.of_float |> Time_ns.of_int63_ns_since_epoch)
     ~p:(Int63.of_float @@ r.Scid.R.c *. 1e8)
     ~v:(Int63.(of_int64_exn r.Scid.R.total_volume * of_int 10_000))
-    ~side:(if r.Scid.R.bid_volume = 0L then Buy else Sell) ()
+    ~side:(if r.Scid.R.bid_volume = 0L then `Buy else `Sell) ()
 
 let key = B.create 8
 let data = B.create 16

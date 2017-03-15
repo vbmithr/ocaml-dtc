@@ -2,7 +2,7 @@ open Core
 
 type t = {
   ts: Time_ns.t;
-  side: Dtc_dtc.side option;
+  side: Dtc_dtc.Side.t option;
   p: Int63.t;
   v: Int63.t;
 } [@@deriving create,sexp]

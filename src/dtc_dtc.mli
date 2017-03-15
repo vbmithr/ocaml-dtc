@@ -151,24 +151,48 @@ module RequestAction :
 module OrderStatus :
   sig
     type t =
-        Sent
-      | Pending_open
-      | Pending_child
-      | Open
-      | Pending_cancel_replace
-      | Pending_cancel
-      | Filled
-      | Canceled
-      | Rejected
-      | Partially_filled
+        [ `Canceled
+        | `Filled
+        | `Open
+        | `Partially_filled
+        | `Pending_cancel
+        | `Pending_cancel_replace
+        | `Pending_child
+        | `Pending_open
+        | `Rejected
+        | `Sent ]
     val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
     val show : t -> Ppx_deriving_runtime.string
+    val __t_of_sexp__ : Sexplib.Sexp.t -> t
     val t_of_sexp : Sexplib.Sexp.t -> t
     val sexp_of_t : t -> Sexplib.Sexp.t
     val min : int
     val max : int
-    val to_enum : t -> int
-    val of_enum : int -> t option
+    val to_enum :
+      [< `Canceled
+       | `Filled
+       | `Open
+       | `Partially_filled
+       | `Pending_cancel
+       | `Pending_cancel_replace
+       | `Pending_child
+       | `Pending_open
+       | `Rejected
+       | `Sent ] ->
+      int
+    val of_enum :
+      int ->
+      [> `Canceled
+       | `Filled
+       | `Open
+       | `Partially_filled
+       | `Pending_cancel
+       | `Pending_cancel_replace
+       | `Pending_child
+       | `Pending_open
+       | `Rejected
+       | `Sent ]
+      option
   end
 module UpdateReason :
   sig
@@ -192,28 +216,32 @@ module UpdateReason :
     val to_enum : t -> int
     val of_enum : int -> t option
   end
-type side = Buy | Sell
-val pp_side : Format.formatter -> side -> Ppx_deriving_runtime.unit
-val show_side : side -> Ppx_deriving_runtime.string
-val min_side : int
-val max_side : int
-val side_to_enum : side -> int
-val side_of_enum : int -> side option
-val side_of_sexp : Sexplib.Sexp.t -> side
-val sexp_of_side : side -> Sexplib.Sexp.t
-val bin_shape_side : Core.Bin_prot.Shape.t
-val bin_size_side : side -> int
-val bin_write_side :
-  Bin_prot.Common.buf ->
-  pos:Bin_prot.Common.pos -> side -> Bin_prot.Common.pos
-val bin_writer_side : side Core.Bin_prot.Type_class.writer
-val __bin_read_side__ :
-  'a -> pos_ref:Core.Bin_prot.Common.pos Core.ref -> 'b -> 'c
-val bin_read_side :
-  Bin_prot.Common.buf -> pos_ref:Bin_prot.Common.pos_ref -> side
-val bin_reader_side : side Core.Bin_prot.Type_class.reader
-val bin_side : side Core.Bin_prot.Type_class.t
-val other_side : side -> side
+module Side :
+  sig
+    type t = [ `Buy | `Sell ]
+    val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
+    val show : t -> Ppx_deriving_runtime.string
+    val min : int
+    val max : int
+    val to_enum : [< `Buy | `Sell ] -> int
+    val of_enum : int -> [> `Buy | `Sell ] option
+    val __t_of_sexp__ : Sexplib.Sexp.t -> t
+    val t_of_sexp : Sexplib.Sexp.t -> t
+    val sexp_of_t : t -> Sexplib.Sexp.t
+    val bin_shape_t : Core.Bin_prot.Shape.t
+    val bin_size_t : 'a -> int
+    val bin_write_t :
+      Bin_prot.Common.buf ->
+      pos:Bin_prot.Common.pos -> [< `Buy | `Sell ] -> Bin_prot.Common.pos
+    val bin_writer_t : [< `Buy | `Sell ] Core.Bin_prot.Type_class.writer
+    val __bin_read_t__ : 'a -> pos_ref:'b -> int -> [> `Buy | `Sell ]
+    val bin_read_t :
+      Bin_prot.Common.buf ->
+      pos_ref:Bin_prot.Common.pos_ref -> [> `Buy | `Sell ]
+    val bin_reader_t : [> `Buy | `Sell ] Core.Bin_prot.Type_class.reader
+    val bin_t : [ `Buy | `Sell ] Core.Bin_prot.Type_class.t
+    val other : [< `Buy | `Sell ] -> [> `Buy | `Sell ]
+  end
 type put_or_call = Call | Put
 val pp_put_or_call :
   Format.formatter -> put_or_call -> Ppx_deriving_runtime.unit
@@ -252,33 +280,53 @@ val market_depth_update_type_of_enum :
   int -> [> `Delete | `Insert_update ] option
 module OrderType :
   sig
-    type t = Market | Limit | Stop | Stop_limit | Market_if_touched
+    type t = [ `Limit | `Market | `Market_if_touched | `Stop | `Stop_limit ]
     val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
     val show : t -> Ppx_deriving_runtime.string
+    val __t_of_sexp__ : Sexplib.Sexp.t -> t
     val t_of_sexp : Sexplib.Sexp.t -> t
     val sexp_of_t : t -> Sexplib.Sexp.t
     val min : int
     val max : int
-    val to_enum : t -> int
-    val of_enum : int -> t option
+    val to_enum :
+      [< `Limit | `Market | `Market_if_touched | `Stop | `Stop_limit ] -> int
+    val of_enum :
+      int ->
+      [> `Limit | `Market | `Market_if_touched | `Stop | `Stop_limit ] option
   end
 module TimeInForce :
   sig
     type t =
-        Day
-      | Good_till_canceled
-      | Good_till_date_time
-      | Immediate_or_cancel
-      | All_or_none
-      | Fill_or_kill
+        [ `All_or_none
+        | `Day
+        | `Fill_or_kill
+        | `Good_till_canceled
+        | `Good_till_date_time
+        | `Immediate_or_cancel ]
     val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
     val show : t -> Ppx_deriving_runtime.string
+    val __t_of_sexp__ : Sexplib.Sexp.t -> t
     val t_of_sexp : Sexplib.Sexp.t -> t
     val sexp_of_t : t -> Sexplib.Sexp.t
     val min : int
     val max : int
-    val to_enum : t -> int
-    val of_enum : int -> t option
+    val to_enum :
+      [< `All_or_none
+       | `Day
+       | `Fill_or_kill
+       | `Good_till_canceled
+       | `Good_till_date_time
+       | `Immediate_or_cancel ] ->
+      int
+    val of_enum :
+      int ->
+      [> `All_or_none
+       | `Day
+       | `Fill_or_kill
+       | `Good_till_canceled
+       | `Good_till_date_time
+       | `Immediate_or_cancel ]
+      option
   end
 type partial_fill = [ `Immediate_cancel | `Reduce_quantity ]
 val pp_partial_fill :
@@ -900,7 +948,7 @@ module MarketData :
         val hexdump_cs : Cstruct.t -> unit
         type t = {
           symbol_id : int;
-          side : side option;
+          side : Side.t option;
           p : float;
           v : float;
           ts : Core.Time_ns.t;
@@ -913,12 +961,13 @@ module MarketData :
         val sexp_of_t : t -> Sexplib.Sexp.t
         val create :
           symbol_id:int ->
-          ?side:side -> p:float -> v:float -> ts:Core.Time_ns.t -> unit -> t
+          ?side:Side.t ->
+          p:float -> v:float -> ts:Core.Time_ns.t -> unit -> t
         val to_cstruct : Cstruct.t -> t -> unit
         val update_cstruct : symbol_id:Cstruct.uint16 -> Cstruct.t -> unit
         val write :
           symbol_id:Cstruct.uint16 ->
-          ?side:side ->
+          ?side:[< `Buy | `Sell ] ->
           p:float -> v:float -> ts:Core.Time_ns.t -> Cstruct.t -> unit
       end
     module UpdateBidAsk :
@@ -1127,7 +1176,7 @@ module MarketDepth :
         val hexdump_cs : Cstruct.t -> unit
         type t = {
           symbol_id : int;
-          side : side option;
+          side : Side.t option;
           p : float;
           v : float;
           level : int;
@@ -1140,13 +1189,13 @@ module MarketDepth :
         val sexp_of_t : t -> Sexplib.Sexp.t
         val create :
           symbol_id:int ->
-          ?side:side ->
+          ?side:Side.t ->
           p:float ->
           v:float -> level:int -> first:bool -> last:bool -> unit -> t
         val to_cstruct : Cstruct.t -> t -> unit
         val write :
           symbol_id:Cstruct.uint16 ->
-          ?side:side ->
+          ?side:[< `Buy | `Sell ] ->
           p:float ->
           v:float ->
           lvl:Cstruct.uint16 -> first:bool -> last:bool -> Cstruct.t -> unit
@@ -1173,7 +1222,7 @@ module MarketDepth :
         val hexdump_cs : Cstruct.t -> unit
         type t = {
           symbol_id : int;
-          side : side option;
+          side : Side.t option;
           p : float;
           v : float;
           op : market_depth_update_type option;
@@ -1184,12 +1233,12 @@ module MarketDepth :
         val sexp_of_t : t -> Sexplib.Sexp.t
         val create :
           symbol_id:int ->
-          ?side:side ->
+          ?side:Side.t ->
           ?p:float -> ?v:float -> ?op:market_depth_update_type -> unit -> t
         val to_cstruct : Cstruct.t -> t -> unit
         val write :
           symbol_id:Cstruct.uint16 ->
-          ?side:side ->
+          ?side:[< `Buy | `Sell ] ->
           ?p:float ->
           ?v:float -> op:[< `Delete | `Insert_update ] -> Cstruct.t -> unit
       end
@@ -1625,7 +1674,7 @@ module HistoricalPriceData :
           ?final:bool ->
           request_id:Cstruct.uint32 ->
           ts:Core.Time_ns.t ->
-          p:float -> v:float -> ?side:side -> Cstruct.t -> unit
+          p:float -> v:float -> ?side:[< `Buy | `Sell ] -> Cstruct.t -> unit
       end
   end
 module Trading :
@@ -1694,7 +1743,7 @@ module Trading :
               exchange : string;
               cli_ord_id : string;
               ord_type : OrderType.t option;
-              side : side option;
+              side : Side.t option;
               open_close : open_or_close option;
               p1 : float;
               p2 : float;
@@ -1717,7 +1766,7 @@ module Trading :
               exchange:string ->
               cli_ord_id:string ->
               ?ord_type:OrderType.t ->
-              ?side:side ->
+              ?side:Side.t ->
               ?open_close:open_or_close ->
               p1:float ->
               p2:float ->
@@ -1810,13 +1859,13 @@ module Trading :
               exchange : string;
               cli_ord_id_1 : string;
               ord_type_1 : OrderType.t option;
-              side_1 : side option;
+              side_1 : Side.t option;
               p1_1 : float;
               p2_1 : float;
               qty_1 : float;
               cli_ord_id_2 : string;
               ord_type_2 : OrderType.t option;
-              side_2 : side option;
+              side_2 : Side.t option;
               p1_2 : float;
               p2_2 : float;
               qty_2 : float;
@@ -1840,13 +1889,13 @@ module Trading :
               exchange:string ->
               cli_ord_id_1:string ->
               ?ord_type_1:OrderType.t ->
-              ?side_1:side ->
+              ?side_1:Side.t ->
               p1_1:float ->
               p2_1:float ->
               qty_1:float ->
               cli_ord_id_2:string ->
               ?ord_type_2:OrderType.t ->
-              ?side_2:side ->
+              ?side_2:Side.t ->
               p1_2:float ->
               p2_2:float ->
               qty_2:float ->
@@ -2090,13 +2139,31 @@ module Trading :
               ?cli_ord_id:Core.String.t ->
               ?srv_ord_id:Core.String.t ->
               ?xch_ord_id:Core.String.t ->
-              ?status:OrderStatus.t ->
+              ?status:[< `Canceled
+                       | `Filled
+                       | `Open
+                       | `Partially_filled
+                       | `Pending_cancel
+                       | `Pending_cancel_replace
+                       | `Pending_child
+                       | `Pending_open
+                       | `Rejected
+                       | `Sent ] ->
               ?reason:UpdateReason.t ->
-              ?ord_type:OrderType.t ->
-              ?side:side ->
+              ?ord_type:[< `Limit
+                         | `Market
+                         | `Market_if_touched
+                         | `Stop
+                         | `Stop_limit ] ->
+              ?side:[< `Buy | `Sell ] ->
               ?p1:Core.Float.t ->
               ?p2:Core.Float.t ->
-              ?tif:TimeInForce.t ->
+              ?tif:[< `All_or_none
+                    | `Day
+                    | `Fill_or_kill
+                    | `Good_till_canceled
+                    | `Good_till_date_time
+                    | `Immediate_or_cancel ] ->
               ?good_till_ts:Core.Time_ns.t ->
               ?order_qty:Core.Float.t ->
               ?filled_qty:Core.Float.t ->
@@ -2311,7 +2378,7 @@ module Trading :
                   ?exchange:Core.String.t ->
                   ?srv_order_id:Core.String.t ->
                   ?exec_id:Core.String.t ->
-                  ?side:side ->
+                  ?side:[< `Buy | `Sell ] ->
                   ?open_close:open_or_close ->
                   ?p:float ->
                   ?v:float -> ?ts:Core.Time_ns.t -> Cstruct.t -> unit
