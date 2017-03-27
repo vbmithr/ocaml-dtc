@@ -1,10 +1,6 @@
-PKG=dtc
-
 all:
-	./build ldb_browser.native hddownload.native
+	jbuilder build @install
 
-PHONY: clean
-
+.PHONY: clean
 clean:
-	rm -f $(PKG).install
-	./build -clean
+	rm -rf _build

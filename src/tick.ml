@@ -5,7 +5,7 @@ type t = {
   side: Dtc_dtc.Side.t option;
   p: Int63.t;
   v: Int63.t;
-} [@@deriving create, sexp, bin_io]
+} [@@deriving create, sexp]
 
 let compare t t' = compare t#p t'#p
 
